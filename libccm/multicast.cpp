@@ -43,7 +43,7 @@ bool Multicast::connect(const std::string& address, uint16_t port)
   
   mMulticastSocketAddr = getSocketAdress(port, addr);
   
-  if(!setupClientSocket( mSocketDesc, port, addr)) {
+  if(!setupSocket( mSocketDesc, port, addr)) {
     return false;
   }
   
@@ -65,7 +65,7 @@ bool Multicast::disconnect()
   return true;
 }
 
-bool Multicast::send(const char* data, uint16_t length)
+bool Multicast::send( const char* data, uint16_t length ) const 
 {
   if(length >MESSAGE_MAX_SIZE) {
     std::cerr << "Message size to large"  << std::endl;
@@ -79,17 +79,22 @@ bool Multicast::send(const char* data, uint16_t length)
   return true;
 }
 
-u_int16_t Multicast::receive(char* data, uint16_t maxLength)
+uint16_t Multicast::receive(char* data, uint16_t maxLength) const
 {
   sockaddr_in addr;
   socklen_t addr_len = sizeof(addr);
   
-  u_int16_t messageSize = recvfrom( mSocketDesc, data, maxLength, 0, (struct sockaddr *) &addr, &addr_len);
+  uint16_t messageSize = recvfrom( mSocketDesc, data, maxLength, 0, (struct sockaddr *) &addr, &addr_len);
   if (messageSize == -1) {
     std::cerr << "Could not receive data"  << std::endl;
   }
     
   return messageSize;
+}
+
+uint8_t Multicast::deliveryType() 
+{
+    return DELIVERY_MULTICAST;
 }
 
 int Multicast::createSocket()
@@ -102,7 +107,7 @@ int Multicast::createSocket()
   return socketDesc;
 }
 
-bool Multicast::setupClientSocket( int socketDesc, uint16_t port, in6_addr address )
+bool Multicast::setupSocket( int socketDesc, uint16_t port, in6_addr address )
 {     
   int addr = 1;
   if(setsockopt (socketDesc, SOL_SOCKET, SO_REUSEADDR, &addr, sizeof (addr)) < 0) {

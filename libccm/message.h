@@ -26,16 +26,19 @@ public:
   static uint16_t getMaxPayloadSize();
   
   uint16_t getMessageSize() const;
-static uint16_t getMaxMessageSize();
+  static uint16_t getMaxMessageSize();
   
   char* getData();
   const char* getData() const;
+  
+    uint8_t getDeliveryType() const;
+    void setDeliveryType(uint8_t type);
   
 protected:
   
 private:
     char* mData;
-    uint16_t mPayloadSize;
+    uint8_t mDeliveryType;
 };
 
 } // ccm

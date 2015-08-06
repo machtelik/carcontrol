@@ -7,11 +7,12 @@
 #include <thread>
 #include <mutex>
 #include <condition_variable>
+#include <unordered_map>
 
 namespace ccm {
   
-class Multicast;
 class Message;
+class DataHandler;
   
 class Component {
   
@@ -36,30 +37,28 @@ protected:
 private:
     volatile bool running;
     
+    std::chrono::milliseconds mLoopInterval;
+    
     int8_t mId;
     
-    std::thread *mReceiveThread;
     std::thread *mSendThread;
   
-    Multicast *mMulticastConnection;
-    int mPort;
-    std::string mIp;
+    std::unordered_map<uint8_t, DataHandler*> mConnections;
+    std::unordered_map<uint8_t, std::thread*> mReceiveThreads;
   
-    std::queue<Message*> *mSendQueue;
-     std::queue<Message*> *mReceiveQueue;
-    std::stack<Message*> *mMessageBuffer;
+    std::queue<Message*> mSendQueue;
+     std::queue<Message*> mReceiveQueue;
+    std::stack<Message*> mMessageBuffer;
     
      std::condition_variable mSendBarrier;
      
     std::mutex mSendQueueMutex;
     std::mutex mReceiveQueueMutex;
     std::mutex mMessageBufferMutex;
-   
-    std::chrono::milliseconds mLoopInterval;
   
-    bool startWorkerThreads();
-    void receiveFunction();
-    bool sendFunction();
+    bool startConnections();
+    void receiveThreadFunction(uint8_t deliveryType);
+    bool sendThreadFunction();
   
 };
 

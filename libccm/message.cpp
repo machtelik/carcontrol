@@ -9,7 +9,8 @@ static const uint8_t HEADER_SOURCE_POS = 2;
 static const uint8_t HEADER_TYPE_POS = 3;
     
 Message::Message()  :
-    mData(new char[MESSAGE_MAX_SIZE])
+    mData(new char[MESSAGE_MAX_SIZE]),
+    mDeliveryType(DELIVERY_MULTICAST)
 {
 }
 
@@ -88,6 +89,15 @@ uint8_t Message::getType() const
     return mData[HEADER_TYPE_POS];
 }
 
+uint8_t Message::getDeliveryType() const
+{
+    return mDeliveryType;
+}
+
+void Message::setDeliveryType ( uint8_t type ) 
+{
+    mDeliveryType = type;
+}
 
 
 }

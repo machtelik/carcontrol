@@ -6,12 +6,6 @@ SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
-SET(HEADER_LIST
-  component.h
-  multicast.h
-  message.h
-)
-
 SET(SRC_LIST
   component.cpp
   multicast.cpp

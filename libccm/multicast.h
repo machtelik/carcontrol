@@ -13,18 +13,18 @@ public:
   Multicast();
   virtual ~Multicast();
   
-    bool connect(const std::string &address, int port);
+    bool connect(const std::string& address, uint16_t port);
     bool disconnect();
     
-    bool send(const char* data, size_t length);
-    size_t receive(char *data, size_t maxLength);
+    bool send(const char* data, uint16_t length);
+    u_int16_t receive(char* data, uint16_t maxLength);
   
-    static sockaddr_in6 getSocketAdress(int port, in6_addr address = in6addr_any);
+    static sockaddr_in6 getSocketAdress(uint16_t port, in6_addr address = in6addr_any);
     static in6_addr getIPV6Adress(const std::string& address);
 protected:
   
   static int createSocket();
-  static bool setupClientSocket(int socketDesc, int port, in6_addr address);
+  static bool setupClientSocket(int socketDesc, uint16_t port, in6_addr address);
   
 private:
   int mSocketDesc;

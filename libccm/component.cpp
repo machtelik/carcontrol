@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <iostream>
+#include <stdint.h>
 
 #include "config.h"
 #include "message.h"
@@ -10,7 +11,7 @@
 
 namespace ccm {
 
-Component::Component ( int argc, char** argv ) :
+Component::Component (int8_t id,  int argc, char** argv ) :
     mLoopInterval ( DEFAULT_LOOP_DURATION) ,
     mSendThread(0),
     mReceiveThread(0),
@@ -20,7 +21,8 @@ Component::Component ( int argc, char** argv ) :
     mMessageBuffer(new std::stack<Message*>()),
     mMulticastConnection(new Multicast()),
     mIp(DEFAULT_IP),
-    mPort(DEFAULT_PORT)
+    mPort(DEFAULT_PORT),
+    mId(id)
 {
 }
 
@@ -59,16 +61,16 @@ int Component::execute() {
 	std::cerr <<  "Component already running"  << std::endl;
         return EXIT_FAILURE;
     }
-    
-    if ( !mMulticastConnection->connect ( mIp, mPort ) ) {
-        return EXIT_FAILURE;
-    }
 
     if ( !begin() ) {
         std::cerr <<  "Error while initializing component"   << std::endl;
         return EXIT_FAILURE;
     }
 
+    if ( !mMulticastConnection->connect ( mIp, mPort ) ) {
+        return EXIT_FAILURE;
+    }
+    
     if ( !startWorkerThreads() ) {
         std::cerr <<  "Could not start worker threads" << std::endl;
     }
@@ -158,14 +160,24 @@ bool Component::startWorkerThreads() {
 }
 
 void Component::receiveFunction() {
+    Message *message = 0;
     while ( running ) {
-        Message *message = getMessage();
+        if (!message) {
+            message = getMessage();
+        }
 
-        size_t dataSize = mMulticastConnection->receive ( message->getData(), message->getMaxDataSize() );
-        message->setDataSize ( dataSize );
-
-        std::lock_guard<std::mutex> lock(mReceiveQueueMutex);
-        mReceiveQueue->push(message);
+        size_t dataSize = mMulticastConnection->receive ( message->getData(), message->getMaxMessageSize() );
+        
+        if(dataSize != message->getMessageSize()) {
+            std::cerr << "Somethings wrong with the message size: " << dataSize << " != " << message->getMessageSize() << std::endl;
+        }
+        
+        //Only handle foreign messages
+        if (mId != message->getSourceId()) {
+            std::lock_guard<std::mutex> lock(mReceiveQueueMutex);
+            mReceiveQueue->push(message);
+            message = 0;
+        }
     }
 }
 
@@ -185,7 +197,8 @@ bool Component::sendFunction() {
         while ( !messageQueue.empty() ) {
             Message *message = messageQueue.front();
             messageQueue.pop();
-            mMulticastConnection->send ( message->getData(), message->getDataSize() );
+            message->setSourceId(mId);
+            mMulticastConnection->send ( message->getData(), message->getMessageSize() );
             releaseMessage ( message );
         }
         

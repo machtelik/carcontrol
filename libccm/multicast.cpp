@@ -25,7 +25,7 @@ Multicast::~Multicast()
   disconnect();
 }
 
-bool Multicast::connect(const std::string& address, int port)
+bool Multicast::connect(const std::string& address, uint16_t port)
 {
   if(mSocketDesc != -1) {
     std::cerr << "Already connected"  << std::endl;
@@ -65,9 +65,9 @@ bool Multicast::disconnect()
   return true;
 }
 
-bool Multicast::send(const char* data, size_t length)
+bool Multicast::send(const char* data, uint16_t length)
 {
-  if(length > MAX_PACKET_SIZE) {
+  if(length >MESSAGE_MAX_SIZE) {
     std::cerr << "Message size to large"  << std::endl;
   }
   
@@ -79,12 +79,12 @@ bool Multicast::send(const char* data, size_t length)
   return true;
 }
 
-size_t Multicast::receive(char* data, size_t maxLength)
+u_int16_t Multicast::receive(char* data, uint16_t maxLength)
 {
   sockaddr_in addr;
   socklen_t addr_len = sizeof(addr);
   
-  size_t messageSize = recvfrom( mSocketDesc, data, maxLength, 0, (struct sockaddr *) &addr, &addr_len);
+  u_int16_t messageSize = recvfrom( mSocketDesc, data, maxLength, 0, (struct sockaddr *) &addr, &addr_len);
   if (messageSize == -1) {
     std::cerr << "Could not receive data"  << std::endl;
   }
@@ -102,7 +102,7 @@ int Multicast::createSocket()
   return socketDesc;
 }
 
-bool Multicast::setupClientSocket(int socketDesc, int port, in6_addr address)
+bool Multicast::setupClientSocket( int socketDesc, uint16_t port, in6_addr address )
 {     
   int addr = 1;
   if(setsockopt (socketDesc, SOL_SOCKET, SO_REUSEADDR, &addr, sizeof (addr)) < 0) {
@@ -134,7 +134,7 @@ bool Multicast::setupClientSocket(int socketDesc, int port, in6_addr address)
   return true;
 }
 
-sockaddr_in6 Multicast::getSocketAdress(int port, in6_addr address)
+sockaddr_in6 Multicast::getSocketAdress(uint16_t port, in6_addr address)
 {
   sockaddr_in6 sin;
   memset (&sin, 0, sizeof (sin));

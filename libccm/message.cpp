@@ -4,8 +4,12 @@
 
 namespace ccm {
 
+static const uint8_t HEADER_LENGTH_POS = 0;
+static const uint8_t HEADER_SOURCE_POS = 2;
+static const uint8_t HEADER_TYPE_POS = 3;
+    
 Message::Message()  :
-    mData(new char[MAX_PACKET_SIZE])
+    mData(new char[MESSAGE_MAX_SIZE])
 {
 }
 
@@ -24,19 +28,66 @@ const char* Message::getData() const
     return mData;
 }
 
-void Message::setDataSize ( size_t size ) 
+char* Message::getPayload()
 {
-    mSize = size;
+    return &mData[MESSAGE_HEADER_SIZE];
 }
 
-size_t Message::getDataSize()  const
+const char* Message::getPayload() const 
 {
-    return mSize;
+    return &mData[MESSAGE_HEADER_SIZE];
 }
 
-size_t Message::getMaxDataSize() const 
+void Message::setPayloadSize ( uint16_t size ) 
 {
-    return MAX_PACKET_SIZE;
+    size = size < getMaxPayloadSize() ? size : getMaxPayloadSize();
+    
+    size += MESSAGE_HEADER_SIZE;
+    
+    mData[HEADER_LENGTH_POS] = size & 0xff;
+    mData[HEADER_LENGTH_POS+1] = (size >> 8);
 }
+
+uint16_t Message::getPayloadSize()  const
+{
+    return getMessageSize()  - MESSAGE_HEADER_SIZE;
+}
+
+uint16_t Message::getMaxPayloadSize() 
+{
+    return MESSAGE_MAX_SIZE - MESSAGE_HEADER_SIZE;
+}
+
+uint16_t Message::getMaxMessageSize() 
+{
+    return MESSAGE_MAX_SIZE;
+}
+
+uint16_t Message::getMessageSize() const
+{
+    return (mData[HEADER_LENGTH_POS+1] << 8) + mData[HEADER_LENGTH_POS];
+}
+
+void Message::setSourceId ( uint8_t source )
+{
+    mData[HEADER_SOURCE_POS] = source;
+}
+
+uint8_t Message::getSourceId() const
+{
+    return mData[HEADER_SOURCE_POS];
+}
+
+void Message::setType ( uint8_t type )
+{
+    mData[HEADER_TYPE_POS] = type;
+}
+
+uint8_t Message::getType() const
+{
+    return mData[HEADER_TYPE_POS];
+}
+
+
 
 }

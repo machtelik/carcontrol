@@ -16,7 +16,7 @@ class Message;
 class Component {
   
 public:
-  Component(int argc, char** argv);
+  Component(int8_t id , int argc, char** argv);
   virtual ~Component();
 
   int execute();
@@ -35,6 +35,9 @@ protected:
   
 private:
     volatile bool running;
+    
+    int8_t mId;
+    
     std::thread *mReceiveThread;
     std::thread *mSendThread;
   

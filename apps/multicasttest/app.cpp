@@ -4,7 +4,7 @@
 #include <iostream>
 
 App::App ( int argc, char** argv ) : 
-    Component ( argc, argv ) 
+    Component ( 1, argc, argv ) 
 {
 }
 
@@ -20,15 +20,15 @@ bool App::loop()
   
   ccm:: Message *message = getMessage();
   std::string str ("Message 1");
-  std::size_t length = str.copy(message->getData(), message->getMaxDataSize(), 0);
-  message->getData()[length]='\0';
-  message->setDataSize(length);
+  std::size_t length = str.copy(message->getPayload(), str.size());
+  message->getPayload()[length]='\0';
+  message->setPayloadSize(length +1);
   sendMessage(message);
   return true;
 }
 
 bool App::messageReceived ( const ccm::Message* message )
 {
-      std::cout << message->getData() << std::endl;
+      std::cout << "Got: " << message->getPayload() << std::endl;
       return true;
 }

@@ -19,9 +19,6 @@ Component::Component ( int argc, char** argv ) :
     mReceiveQueue(new std::queue<Message*>()),
     mMessageBuffer(new std::stack<Message*>()),
     mMulticastConnection(new Multicast()),
-    mSendQueueMutex(new std::mutex()),
-    mReceiveQueueMutex(new std::mutex()),
-    mMessageBufferMutex(new std::mutex()),
     mIp(DEFAULT_IP),
     mPort(DEFAULT_PORT)
 {
@@ -48,9 +45,6 @@ Component::~Component()
     delete mMessageBuffer;
     
     delete mMulticastConnection;
-    
-    delete mSendQueueMutex;
-    delete mMessageBufferMutex;
     
     if(mSendThread) {
 	delete mSendThread;
@@ -91,12 +85,13 @@ int Component::execute() {
             return EXIT_FAILURE;
         }
         
-        mReceiveQueueMutex->lock();
-	while(!mReceiveQueue->empty()) {
-	    messageQueue.push(mReceiveQueue->front());
-	    mReceiveQueue->pop();
-	}
-	mReceiveQueueMutex->unlock();
+        {
+            std::lock_guard<std::mutex> lock(mReceiveQueueMutex);
+            while(!mReceiveQueue->empty()) {
+                messageQueue.push(mReceiveQueue->front());
+                mReceiveQueue->pop();
+            }
+        }
 	
 	while(!messageQueue.empty()) {
 	    Message *message = messageQueue.front();
@@ -125,14 +120,14 @@ void Component::exit() {
 }
 
 Message *Component::getMessage() {
+    std::lock_guard<std::mutex> lock(mMessageBufferMutex);
+    
     Message *message = 0;
-
-    mMessageBufferMutex->lock();
+    
     if (!mMessageBuffer->empty() ) {
 	message = mMessageBuffer->top();
 	mMessageBuffer->pop();
     }
-    mMessageBufferMutex->unlock();
     
     if (message ) {
         return message;
@@ -142,15 +137,14 @@ Message *Component::getMessage() {
 }
 
 void Component::sendMessage ( Message *message ) {
-    mSendQueueMutex->lock();
+    std::lock_guard<std::mutex> lock(mSendQueueMutex);
     mSendQueue->push ( message );
-    mSendQueueMutex->unlock();
+   mSendBarrier .notify_one();
 }
 
 void Component::releaseMessage ( Message *message ) {
-    mMessageBufferMutex->lock();
+    std::lock_guard<std::mutex> lock(mMessageBufferMutex);
     mMessageBuffer->push ( message );
-    mMessageBufferMutex->unlock();
 }
 
 bool Component::startWorkerThreads() {
@@ -170,22 +164,24 @@ void Component::receiveFunction() {
         size_t dataSize = mMulticastConnection->receive ( message->getData(), message->getMaxDataSize() );
         message->setDataSize ( dataSize );
 
-        mReceiveQueueMutex->lock();
+        std::lock_guard<std::mutex> lock(mReceiveQueueMutex);
         mReceiveQueue->push(message);
-	mReceiveQueueMutex->unlock();
     }
 }
 
 bool Component::sendFunction() {
     std::queue<Message*> messageQueue;
     while ( running ) {
-	mSendQueueMutex->lock();
-	while(!mSendQueue->empty()) {
-	    messageQueue.push(mSendQueue->front());
-	    mSendQueue->pop();
-	}
-	mSendQueueMutex->unlock();
-	
+        {
+            std::unique_lock<std::mutex> lk(mSendQueueMutex);
+            mSendBarrier.wait(lk, [&](){return !Component::mSendQueue->empty();});
+            
+            while(!mSendQueue->empty()) {
+                messageQueue.push(mSendQueue->front());
+                mSendQueue->pop();
+            }
+        }
+           
         while ( !messageQueue.empty() ) {
             Message *message = messageQueue.front();
             messageQueue.pop();
@@ -193,7 +189,6 @@ bool Component::sendFunction() {
             releaseMessage ( message );
         }
         
-        std::this_thread::yield();
     }
 }
 

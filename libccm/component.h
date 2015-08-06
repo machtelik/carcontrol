@@ -6,6 +6,7 @@
 #include <stack>
 #include <thread>
 #include <mutex>
+#include <condition_variable>
 
 namespace ccm {
   
@@ -45,10 +46,12 @@ private:
      std::queue<Message*> *mReceiveQueue;
     std::stack<Message*> *mMessageBuffer;
     
-    std::mutex *mSendQueueMutex;
-    std::mutex *mReceiveQueueMutex;
-    std::mutex *mMessageBufferMutex;
-  
+     std::condition_variable mSendBarrier;
+     
+    std::mutex mSendQueueMutex;
+    std::mutex mReceiveQueueMutex;
+    std::mutex mMessageBufferMutex;
+   
     std::chrono::milliseconds mLoopInterval;
   
     bool startWorkerThreads();

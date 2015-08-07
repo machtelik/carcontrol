@@ -8,7 +8,9 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 SET(SRC_LIST
   component.cpp
-  multicast.cpp
+  multicastcommunication.cpp
+  serialcommunication.cpp
+  communication.cpp
   message.cpp
 )
 

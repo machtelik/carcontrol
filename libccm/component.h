@@ -12,7 +12,7 @@
 namespace ccm {
   
 class Message;
-class DataHandler;
+class Communication;
   
 class Component {
   
@@ -24,6 +24,8 @@ public:
   
   void exit();
   
+  uint8_t getId();
+  
 protected:
   
     virtual bool begin() = 0;
@@ -33,6 +35,8 @@ protected:
     Message *getMessage();
     void sendMessage(Message *message);
     void releaseMessage(Message *message);
+    
+    bool addCommunicationMethod(Communication *communication);
   
 private:
     volatile bool running;
@@ -43,7 +47,7 @@ private:
     
     std::thread *mSendThread;
   
-    std::unordered_map<uint8_t, DataHandler*> mConnections;
+    std::unordered_map<uint8_t, Communication*> mConnections;
     std::unordered_map<uint8_t, std::thread*> mReceiveThreads;
   
     std::queue<Message*> mSendQueue;
@@ -56,9 +60,11 @@ private:
     std::mutex mReceiveQueueMutex;
     std::mutex mMessageBufferMutex;
   
-    bool startConnections();
+    bool startCommunication();
     void receiveThreadFunction(uint8_t deliveryType);
-    bool sendThreadFunction();
+    void sendThreadFunction();
+    
+    bool handleMessages();
   
 };
 

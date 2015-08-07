@@ -31,14 +31,14 @@ public:
   char* getData();
   const char* getData() const;
   
-    uint8_t getDeliveryType() const;
-    void setDeliveryType(uint8_t type);
+    uint8_t getCommunicationId() const;
+    void setCommunicationId(uint8_t type);
   
 protected:
   
 private:
     char* mData;
-    uint8_t mDeliveryType;
+    uint8_t mCommunicationId;
 };
 
 } // ccm

@@ -3,32 +3,32 @@
 
 #include <iostream>
 
-App::App ( int argc, char** argv ) : 
-    Component ( 1, argc, argv ) 
+App::App ( int argc, char** argv ) :
+        Component ( 1, argc, argv )
 {
 }
 
 bool App::begin()
 {
 
-    return true;
+        return true;
 }
 
-bool App::loop() 
+bool App::loop()
 {
-  std::cout << "Sending" << std::endl;
-  
-  ccm:: Message *message = getMessage();
-  std::string str ("Message 1");
-  std::size_t length = str.copy(message->getPayload(), str.size());
-  message->getPayload()[length]='\0';
-  message->setPayloadSize(length +1);
-  sendMessage(message);
-  return true;
+        std::cout << "Sending" << std::endl;
+
+        ccm:: Message *message = getMessage();
+        std::string str ( "Message " + getId() );
+        std::size_t length = str.copy ( message->getPayload(), str.size() );
+        message->getPayload() [length] = '\0';
+        message->setPayloadSize ( length + 1 );
+        sendMessage ( message );
+        return true;
 }
 
 bool App::messageReceived ( const ccm::Message* message )
 {
-      std::cout << "Got: " << message->getPayload() << std::endl;
-      return true;
+        std::cout << "Got: " << message->getPayload() << std::endl;
+        return true;
 }

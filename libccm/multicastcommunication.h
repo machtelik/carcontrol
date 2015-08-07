@@ -4,23 +4,23 @@
 #include <netinet/in.h>
 #include <string>
 
-#include "datahandler.h"
+#include "communication.h"
 
 namespace ccm {
 
-class Multicast : public DataHandler {
+class MulticastCommunication : public Communication {
   
 public:
-  Multicast();
-  virtual ~Multicast();
+          static const uint8_t MULTICAST_COMMUNICATION = 0;
+    
+  MulticastCommunication(const std::string& address, uint16_t port);
+  virtual ~MulticastCommunication();
   
-    bool connect(const std::string& address, uint16_t port);
+    bool connect();
     bool disconnect();
     
-    bool send(const char* data, uint16_t length) const;
-    uint16_t receive(char* data, uint16_t maxLength) const;
-    
-    uint8_t deliveryType();
+    bool send(const char* data, uint16_t length);
+    uint16_t receive(char* data, uint16_t maxLength);
   
     static sockaddr_in6 getSocketAdress(uint16_t port, in6_addr address = in6addr_any);
     static in6_addr getIPV6Adress(const std::string& address);
@@ -32,7 +32,10 @@ protected:
 private:
   int mSocketDesc;
   
-  sockaddr_in6 mMulticastSocketAddr;
+  in6_addr mAddress;
+  uint16_t mPort;
+  
+  sockaddr_in6 mMulticastAddr;
   
 };
 

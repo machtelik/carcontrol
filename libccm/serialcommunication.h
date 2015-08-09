@@ -1,5 +1,5 @@
-#ifndef __SERIAL_H__
-#define __SERIAL_H__
+#ifndef __SERIALCOMMUNICATION_H__
+#define __SERIALCOMMUNICATION_H__
 
 #include <netinet/in.h>
 #include <string>
@@ -35,6 +35,6 @@ private:
 
 } // ccm
 
-#endif /* __SERIAL_H__ */
+#endif /* __SERIALCOMMUNICATION_H__ */
  
  

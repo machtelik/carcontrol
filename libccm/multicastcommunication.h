@@ -1,5 +1,5 @@
-#ifndef __MULTICAST_H__
-#define __MULTICAST_H__
+#ifndef __MULTICASTCOMMUNICATION_H__
+#define __MULTICASTCOMMUNICATION_H__
 
 #include <netinet/in.h>
 #include <string>
@@ -41,6 +41,6 @@ private:
 
 } // ccm
 
-#endif /* __MULTICAST_H__ */
+#endif /* __MULTICASTCOMMUNICATION_H__ */
  
  

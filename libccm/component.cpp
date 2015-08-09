@@ -8,6 +8,7 @@
 #include "config.h"
 #include "message.h"
 #include "multicastcommunication.h"
+#include "messageable.h"
 
 namespace ccm
 {
@@ -151,6 +152,13 @@ void Component::sendMessage ( Message *message )
         std::lock_guard<std::mutex> lock ( mSendQueueMutex );
         mSendQueue.push ( message );
         mSendBarrier .notify_one();
+}
+
+void Component::send ( const Messageable* messageable )
+{
+    Message *message = getMessage();
+    messageable->toMessage(getMessage());
+    sendMessage(message);
 }
 
 void Component::releaseMessage ( Message *message )

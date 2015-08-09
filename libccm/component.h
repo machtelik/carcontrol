@@ -13,6 +13,7 @@ namespace ccm {
   
 class Message;
 class Communication;
+class Messageable;
   
 class Component {
   
@@ -37,6 +38,10 @@ protected:
     void releaseMessage(Message *message);
     
     bool addCommunicationMethod(Communication *communication);
+    
+    void send(const Messageable *messageable);
+    void addMessageReceiver(uint8_t messageType, Messageable *messageable);
+    void removeMessageReceiver(Messageable *messageable);
   
 private:
     volatile bool running;

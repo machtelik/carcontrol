@@ -1,6 +1,6 @@
 #include "message.h"
 
-#include "config.h"
+#include "../config.h"
 
 namespace ccm
 {

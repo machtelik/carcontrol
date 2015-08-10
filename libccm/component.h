@@ -34,14 +34,10 @@ protected:
     virtual bool messageReceived(const Message *message) = 0;
   
     Message *getMessage();
-    void sendMessage(Message *message);
+    void sendMessage(ccm::Message* message);
     void releaseMessage(Message *message);
     
     bool addCommunicationMethod(Communication *communication);
-    
-    void send(const Messageable *messageable);
-    void addMessageReceiver(uint8_t messageType, Messageable *messageable);
-    void removeMessageReceiver(Messageable *messageable);
   
 private:
     volatile bool running;

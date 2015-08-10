@@ -9,8 +9,8 @@ class Messageable {
   
 public:
     
-    virtual void fromMessage(const Message *message) = 0;
-    virtual void toMessage(Message *message) const = 0;
+    virtual bool fromMessage(const Message *message) = 0;
+    virtual bool toMessage(Message *message) const = 0;
   
 protected:
   

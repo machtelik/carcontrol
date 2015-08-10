@@ -1,5 +1,5 @@
 #include "app.h"
-#include <libccm/message.h>
+#include <libccm/data/message.h>
 
 #include <iostream>
 

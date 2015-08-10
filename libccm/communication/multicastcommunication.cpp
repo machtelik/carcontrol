@@ -10,13 +10,13 @@
 #include <string.h>
 #include <iostream>
 
-#include "config.h"
+#include "../config.h"
 
 namespace ccm
 {
 
 MulticastCommunication::MulticastCommunication(const std::string& address, uint16_t port) :
-        Communication(MULTICAST_COMMUNICATION),
+        Communication(TYPE),
         mSocketDesc ( -1 ),
         mAddress(getIPV6Adress ( address )),
         mPort(port)

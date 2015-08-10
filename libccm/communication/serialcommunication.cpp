@@ -7,13 +7,13 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "config.h"
+#include "../config.h"
 
 namespace ccm
 {
 
 SerialCommunication::SerialCommunication(const std::string& device) :
-    Communication(SERIAL_COMMUNICATION),
+    Communication(TYPE),
     mSocketDesc(-1),
     mDevice(device)
 {

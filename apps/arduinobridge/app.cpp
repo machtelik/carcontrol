@@ -1,8 +1,9 @@
 #include "app.h"
-#include <libccm/message.h>
+#include <libccm/data/message.h>
 
 #include <iostream>
-#include "libccm/serialcommunication.h"
+#include "libccm/communication/serialcommunication.h"
+#include "libccm/data/carcontroldata.h"
 
 static const char* SERIAL_PORT = "/dev/ttyACM0";
 
@@ -24,7 +25,7 @@ bool App::loop()
         std::cout << "Sending" << std::endl;
 
         ccm:: Message *message = getMessage();
-        message->setCommunicationId(ccm::SerialCommunication::SERIAL_COMMUNICATION);
+        message->setCommunicationId(ccm::SerialCommunication::TYPE);
         std::string str ( "Message " + getId() );
         std::size_t length = str.copy ( message->getPayload(), str.size() );
         message->getPayload() [length] = '\0';
@@ -35,6 +36,8 @@ bool App::loop()
 
 bool App::messageReceived ( const ccm::Message* message )
 {
-        std::cout << "Got: " << message->getPayload() << std::endl;
+        if(message->getType() == ccm::CarControlData::TYPE) {
+            
+        }
         return true;
 }

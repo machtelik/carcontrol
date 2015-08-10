@@ -6,9 +6,8 @@
 #include <stdint.h>
 
 #include "config.h"
-#include "message.h"
-#include "multicastcommunication.h"
-#include "messageable.h"
+#include "data/message.h"
+#include "communication/multicastcommunication.h"
 
 namespace ccm
 {
@@ -141,24 +140,17 @@ Message *Component::getMessage()
 
         //Set default communication data
         message->setSourceId(mId);
-        message->setCommunicationId(MulticastCommunication::MULTICAST_COMMUNICATION);
+        message->setCommunicationId(MulticastCommunication::TYPE);
         message->setPayloadSize(0);
         
         return message ;
 }
 
-void Component::sendMessage ( Message *message )
+void Component::sendMessage ( ccm::Message* message )
 {
         std::lock_guard<std::mutex> lock ( mSendQueueMutex );
         mSendQueue.push ( message );
         mSendBarrier .notify_one();
-}
-
-void Component::send ( const Messageable* messageable )
-{
-    Message *message = getMessage();
-    messageable->toMessage(getMessage());
-    sendMessage(message);
 }
 
 void Component::releaseMessage ( Message *message )

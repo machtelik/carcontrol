@@ -11,7 +11,7 @@ namespace ccm {
 class SerialCommunication : public Communication {
   
 public:
-          static const uint8_t SERIAL_COMMUNICATION = 1;
+          static const uint8_t TYPE = 1;
     
   SerialCommunication(const std::string& device);
   virtual ~SerialCommunication();

@@ -11,7 +11,7 @@ namespace ccm {
 class MulticastCommunication : public Communication {
   
 public:
-          static const uint8_t MULTICAST_COMMUNICATION = 0;
+          static const uint8_t TYPE = 0;
     
   MulticastCommunication(const std::string& address, uint16_t port);
   virtual ~MulticastCommunication();

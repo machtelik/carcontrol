@@ -12,19 +12,18 @@ class MessageManager {
   
 public:
     MessageManager();  
-     MessageManager(int defaultSourceId, int defaultCommunicationId);    
+     MessageManager(int defaultSourceId);    
     virtual ~MessageManager();
   
     Message *getMessage();
     Message* getMessageCopy(const Message *message);
-    void releaseMessage(Message *message);
+    void release(Message *message);
   
 protected:
   
 private:
     
     int mDefaultSourceId;
-    int mDefaultCommunicationId;
     
     std::stack<Message*> mMessageBuffer;
     std::mutex mMessageBufferMutex;

@@ -4,6 +4,7 @@
 
 #include <iostream>
 #include "libccm/data/messagemanager.h"
+#include "libccm/communication/communicationhandler.h"
 
 App::App ( int argc, char** argv ) :
         Component ( 0, argc, argv )
@@ -20,12 +21,12 @@ bool App::loop()
 
         std::cout << "Sending" << std::endl;
 
-        ccm:: Message *message = messageManager()->getMessage();
+        ccm:: Message *message =  communication()->messages()->getMessage();
         std::string str ( "Message " + getId() );
         std::size_t length = str.copy ( message->getPayload(), str.size() );
         message->getPayload() [length] = '\0';
         message->setPayloadSize ( length + 1 );
-        sendMessage ( message );
+         communication()->sendMessage ( message );
 
         return true;
 }

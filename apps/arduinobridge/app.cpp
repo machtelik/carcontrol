@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include "libccm/communication/serialcommunication.h"
+#include <libccm/communication/communicationhandler.h>
 #include "libccm/data/carcontroldata.h"
 #include <libccm/data/messagemanager.h>
 
@@ -17,7 +18,7 @@ App::App ( int argc, char** argv ) :
 bool App::begin()
 {
         bool ok = true;
-        ok |= addCommunicationMethod(new ccm::SerialCommunication(SERIAL_PORT, SERIAL_BAUD_RATE));
+        ok |= communication()->addCommunicationMethod(new ccm::SerialCommunication(SERIAL_PORT, SERIAL_BAUD_RATE));
         
         return ok;
 }
@@ -30,9 +31,9 @@ bool App::loop()
 bool App::messageReceived ( const ccm::Message* message )
 {
         if(message->getType() == ccm::CarControlData::TYPE) {
-            ccm::Message *messageCopy = messageManager()->getMessageCopy(message);
+            ccm::Message *messageCopy = communication()->messages()->getMessageCopy(message);
             messageCopy->setCommunicationId(ccm::SerialCommunication::TYPE);
-            sendMessage(messageCopy);
+            communication()->sendMessage(messageCopy);
         }
         return true;
 }

@@ -5,15 +5,8 @@
 
 namespace ccm {
     
-MessageManager::MessageManager():
-MessageManager(0, 0)
-{
-
-}
-
-MessageManager::MessageManager ( int defaultSourceId, int defaultCommunicationId ) :
-mDefaultSourceId(defaultSourceId),
-mDefaultCommunicationId(defaultCommunicationId)
+MessageManager::MessageManager ( int defaultSourceId ) :
+mDefaultSourceId(defaultSourceId)
 {
 }
 
@@ -43,7 +36,7 @@ Message *MessageManager::getMessage()
         }
         
         message->setSourceId(mDefaultSourceId);
-        message->setCommunicationId(mDefaultCommunicationId);
+        message->setCommunicationId(0);
         message->setPayloadSize(0);
         
         return message ;
@@ -56,7 +49,7 @@ Message* MessageManager::getMessageCopy(const Message *message)
     return copy;
 }
 
-void MessageManager::releaseMessage ( Message *message )
+void MessageManager::release ( Message *message )
 {
         std::lock_guard<std::mutex> lock ( mMessageBufferMutex );
         if(mMessageBuffer.size() < MAX_MESSAGE_BUFFER_SIZE) {

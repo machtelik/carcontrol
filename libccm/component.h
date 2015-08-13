@@ -2,18 +2,13 @@
 #define __COMPONENT_H__
 
 #include <chrono>
-#include <queue>
-#include <thread>
-#include <mutex>
-#include <condition_variable>
-#include <unordered_map>
 
 namespace ccm {
   
 class Message;
 class Communication;
 class Messageable;
-class MessageManager;
+class CommunicationHandler;
   
 class Component {
   
@@ -33,40 +28,18 @@ protected:
     virtual bool loop() = 0;
     virtual bool messageReceived(const Message *message) = 0;
  
-    void sendMessage(ccm::Message* message);
-    
-    MessageManager *messageManager();
-    
-    bool addCommunicationMethod(Communication *communication);
-  
+    CommunicationHandler *communication();
+      
 private:
-    volatile bool running;
+    volatile bool mRunning;
     
     std::chrono::milliseconds mLoopInterval;
     
     int8_t mId;
     
-    std::thread *mSendThread;
-  
-    std::unordered_map<uint8_t, Communication*> mConnections;
-    std::unordered_map<uint8_t, std::thread*> mReceiveThreads;
-  
-    std::queue<Message*> mSendQueue;
-     std::queue<Message*> mReceiveQueue;
-
-    
-     std::condition_variable mSendBarrier;
-     
-    std::mutex mSendQueueMutex;
-    std::mutex mReceiveQueueMutex;
-    
-    MessageManager *mMessageManager;
-  
-    bool startCommunication();
-    void receiveThreadFunction(uint8_t deliveryType);
-    void sendThreadFunction();
-    
-    bool handleMessages();
+    CommunicationHandler *mCommunicationHandler;
+      
+    bool handleReceivedMessages();
   
 };
 

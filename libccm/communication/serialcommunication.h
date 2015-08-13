@@ -13,7 +13,7 @@ class SerialCommunication : public Communication {
 public:
           static const uint8_t TYPE = 1;
     
-  SerialCommunication(const std::string& device);
+  SerialCommunication(const std::string& device, int baudRate);
   virtual ~SerialCommunication();
   
     bool connect();
@@ -30,6 +30,7 @@ protected:
 private:
     int mSocketDesc;
     std::string mDevice;
+    int mBaudRate;
     
 };
 

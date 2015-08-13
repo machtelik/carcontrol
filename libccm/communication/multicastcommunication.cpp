@@ -10,7 +10,7 @@
 #include <string.h>
 #include <iostream>
 
-#include "../config.h"
+#include "config.h"
 
 namespace ccm
 {

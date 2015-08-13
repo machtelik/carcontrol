@@ -4,8 +4,10 @@
 #include <iostream>
 #include "libccm/communication/serialcommunication.h"
 #include "libccm/data/carcontroldata.h"
+#include <libccm/data/messagemanager.h>
 
 static const char* SERIAL_PORT = "/dev/ttyACM0";
+static const uint32_t SERIAL_BAUD_RATE = 9600;
 
 App::App ( int argc, char** argv ) :
         Component ( 2, argc, argv )
@@ -15,29 +17,22 @@ App::App ( int argc, char** argv ) :
 bool App::begin()
 {
         bool ok = true;
-        ok |= addCommunicationMethod(new ccm::SerialCommunication(SERIAL_PORT));
+        ok |= addCommunicationMethod(new ccm::SerialCommunication(SERIAL_PORT, SERIAL_BAUD_RATE));
         
         return ok;
 }
 
 bool App::loop()
 {
-        std::cout << "Sending" << std::endl;
-
-        ccm:: Message *message = getMessage();
-        message->setCommunicationId(ccm::SerialCommunication::TYPE);
-        std::string str ( "Message " + getId() );
-        std::size_t length = str.copy ( message->getPayload(), str.size() );
-        message->getPayload() [length] = '\0';
-        message->setPayloadSize ( length + 1 );
-        sendMessage ( message );
         return true;
 }
 
 bool App::messageReceived ( const ccm::Message* message )
 {
         if(message->getType() == ccm::CarControlData::TYPE) {
-            
+            ccm::Message *messageCopy = messageManager()->getMessageCopy(message);
+            messageCopy->setCommunicationId(ccm::SerialCommunication::TYPE);
+            sendMessage(messageCopy);
         }
         return true;
 }

@@ -8,6 +8,7 @@
 #include "config.h"
 #include "data/message.h"
 #include "communication/multicastcommunication.h"
+#include "data/messagemanager.h"
 
 namespace ccm
 {
@@ -16,7 +17,8 @@ Component::Component ( int8_t id,  int argc, char** argv ) :
         running ( false ),
         mLoopInterval ( DEFAULT_LOOP_DURATION ) ,
         mId ( id ),
-        mSendThread ( 0 )
+        mSendThread ( 0 ),
+        mMessageManager(new MessageManager(id, MulticastCommunication::TYPE))
 {
 }
 
@@ -32,11 +34,6 @@ Component::~Component()
                 mReceiveQueue.pop();
         }
 
-        while ( !mMessageBuffer.empty() ) {
-                delete mMessageBuffer.top();
-                mMessageBuffer.pop();
-        }
-
         for ( int i = 0; i < mConnections.size(); ++i ) {
                 delete mConnections.at ( i );
         }
@@ -48,6 +45,8 @@ Component::~Component()
         for ( int i = 0; i < mReceiveThreads.size(); ++i ) {
                 delete mReceiveThreads.at ( i );
         }
+        
+        delete mMessageManager;
 }
 
 int Component::execute()
@@ -88,6 +87,11 @@ int Component::execute()
         return EXIT_SUCCESS;
 }
 
+MessageManager* Component::messageManager()
+{
+    return mMessageManager;
+}
+
 bool Component::handleMessages()
 {
         std::queue<Message*> messageQueue;
@@ -103,7 +107,7 @@ bool Component::handleMessages()
                 Message *message = messageQueue.front();
                 messageQueue.pop();
                 bool handled = messageReceived ( message );
-                releaseMessage ( message );
+               messageManager()->releaseMessage ( message );
 
                 if ( !handled ) {
                         return false;
@@ -123,40 +127,11 @@ uint8_t Component::getId()
     return mId;
 }
 
-Message *Component::getMessage()
-{
-        std::lock_guard<std::mutex> lock ( mMessageBufferMutex );
-
-        Message *message = 0;
-
-        if ( !mMessageBuffer.empty() ) {
-                message = mMessageBuffer.top();
-                mMessageBuffer.pop();
-        }
-
-        if ( !message ) {
-                return new Message();
-        }
-
-        //Set default communication data
-        message->setSourceId(mId);
-        message->setCommunicationId(MulticastCommunication::TYPE);
-        message->setPayloadSize(0);
-        
-        return message ;
-}
-
 void Component::sendMessage ( ccm::Message* message )
 {
         std::lock_guard<std::mutex> lock ( mSendQueueMutex );
         mSendQueue.push ( message );
         mSendBarrier .notify_one();
-}
-
-void Component::releaseMessage ( Message *message )
-{
-        std::lock_guard<std::mutex> lock ( mMessageBufferMutex );
-        mMessageBuffer.push ( message );
 }
 
 bool Component::startCommunication()
@@ -194,7 +169,7 @@ void Component::receiveThreadFunction ( uint8_t deliveryType )
         Message *message = 0;
         while ( running ) {
                 if ( !message ) {
-                        message = getMessage();
+                        message = messageManager()->getMessage();
                 }
 
                 size_t dataSize = connection->receive ( message->getData(), message->getMaxMessageSize() );
@@ -240,7 +215,7 @@ void Component::sendThreadFunction()
                                 std::cerr << "Did not find connection for delivery type: " << message->getCommunicationId() << ", is it enabled?" << std::endl;
                         }
 
-                        releaseMessage ( message );
+                        messageManager()->releaseMessage ( message );
                         
                         if(!ok) {
                             std::cerr << "Could not send message" << std::endl;

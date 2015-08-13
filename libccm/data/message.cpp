@@ -1,6 +1,9 @@
 #include "message.h"
 
-#include "../config.h"
+#include <algorithm>
+#include <string.h>
+
+#include "config.h"
 
 namespace ccm
 {
@@ -18,6 +21,12 @@ Message::Message()  :
 Message::~Message()
 {
         delete[] mData;
+}
+
+Message& Message::operator= ( const Message& other )
+{
+    mCommunicationId = other.getCommunicationId();
+    memcpy(mData, other.mData, other.getMessageSize());
 }
 
 char* Message::getData()

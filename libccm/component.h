@@ -3,7 +3,6 @@
 
 #include <chrono>
 #include <queue>
-#include <stack>
 #include <thread>
 #include <mutex>
 #include <condition_variable>
@@ -14,6 +13,7 @@ namespace ccm {
 class Message;
 class Communication;
 class Messageable;
+class MessageManager;
   
 class Component {
   
@@ -32,10 +32,10 @@ protected:
     virtual bool begin() = 0;
     virtual bool loop() = 0;
     virtual bool messageReceived(const Message *message) = 0;
-  
-    Message *getMessage();
+ 
     void sendMessage(ccm::Message* message);
-    void releaseMessage(Message *message);
+    
+    MessageManager *messageManager();
     
     bool addCommunicationMethod(Communication *communication);
   
@@ -53,13 +53,14 @@ private:
   
     std::queue<Message*> mSendQueue;
      std::queue<Message*> mReceiveQueue;
-    std::stack<Message*> mMessageBuffer;
+
     
      std::condition_variable mSendBarrier;
      
     std::mutex mSendQueueMutex;
     std::mutex mReceiveQueueMutex;
-    std::mutex mMessageBufferMutex;
+    
+    MessageManager *mMessageManager;
   
     bool startCommunication();
     void receiveThreadFunction(uint8_t deliveryType);

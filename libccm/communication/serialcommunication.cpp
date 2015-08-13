@@ -7,15 +7,16 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "../config.h"
+#include "config.h"
 
 namespace ccm
 {
 
-SerialCommunication::SerialCommunication(const std::string& device) :
+SerialCommunication::SerialCommunication( const std::string& device, int baudRate ) :
     Communication(TYPE),
     mSocketDesc(-1),
-    mDevice(device)
+    mDevice(device),
+    mBaudRate(baudRate)
 {
 }
 
@@ -38,7 +39,7 @@ bool SerialCommunication::connect()
                 return false;
         }
 
-        setupSocket(mSocketDesc, SERIAL_BAUD_RATE, 0);
+        setupSocket(mSocketDesc, mBaudRate, 0);
 }
 
 bool SerialCommunication::disconnect()

@@ -5,12 +5,14 @@
 #include <stdint.h>
 
 namespace ccm {
-
+    
 class Message {
   
 public:
   Message();
   virtual ~Message();
+  
+  Message& operator=(const Message &other);
   
   uint8_t getType() const;
   void setType(uint8_t type);

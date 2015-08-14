@@ -4,7 +4,7 @@
 static const uint16_t MESSAGE_HEADER_SIZE = 4; //bytes
 static const uint16_t MESSAGE_MAX_SIZE = 512; //bytes
 
-static const uint8_t MAX_MESSAGE_BUFFER_SIZE = 32; //messages
+static const uint8_t MAX_MESSAGE_BUFFER_SIZE = 64; //messages
 
 static const uint16_t DEFAULT_LOOP_DURATION = 1000; //msec
 

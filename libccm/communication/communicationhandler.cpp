@@ -5,6 +5,7 @@
 #include "data/messagemanager.h"
 #include "data/message.h"
 #include "communication.h"
+#include "config.h"
 
 namespace ccm {
     
@@ -22,7 +23,7 @@ CommunicationHandler::~CommunicationHandler()
     mRunning = false;
     
         while ( !mSendQueue.empty() ) {
-                mMessageManager->release(mSendQueue.front());
+                mMessageManager->release(mSendQueue.front().second);
                 mSendQueue.pop();
         }
 
@@ -59,11 +60,11 @@ void CommunicationHandler::getReceivedMessages ( std::queue< Message* > &message
                 mReceiveQueue.pop();
         }
 }
-    
-    void CommunicationHandler::sendMessage ( Message* message )
+   
+    void CommunicationHandler::sendMessage ( int communicationType, Message* message )
 {
         std::lock_guard<std::mutex> lock ( mSendQueueMutex );
-        mSendQueue.push ( message );
+        mSendQueue.push ( std::pair<int, Message*>(communicationType, message) );
         mSendBarrier .notify_one();
 }
 
@@ -77,7 +78,7 @@ bool CommunicationHandler::startCommunication()
 
 bool CommunicationHandler::addCommunicationMethod ( Communication *communication )
 {
-    if(mConnections.count(communication->communicationId())) {
+    if(mConnections.count(communication->communicationType())) {
         std::cerr << "Communication with given id already exists" << std::endl;
     }
     
@@ -85,9 +86,9 @@ bool CommunicationHandler::addCommunicationMethod ( Communication *communication
                 return false;
         }
 
-        mConnections[communication->communicationId()] = communication;
-        std::thread *multicastReceiveThread = new std::thread ( &CommunicationHandler::receiveThreadFunction, this, communication->communicationId() );
-        mReceiveThreads[communication->communicationId()] = multicastReceiveThread;
+        mConnections[communication->communicationType()] = communication;
+        std::thread *multicastReceiveThread = new std::thread ( &CommunicationHandler::receiveThreadFunction, this, communication->communicationType() );
+        mReceiveThreads[communication->communicationType()] = multicastReceiveThread;
 
         return true;
 }
@@ -102,7 +103,6 @@ void CommunicationHandler::receiveThreadFunction ( uint8_t deliveryType )
                 }
 
                 size_t dataSize = connection->receive ( message->getData(), message->getMaxMessageSize() );
-                message->setCommunicationId ( connection->communicationId() );
 
                 if ( dataSize != message->getMessageSize() ) {
                         std::cerr << "Somethings wrong with the message size: " << dataSize << " != " << message->getMessageSize() << std::endl;
@@ -113,13 +113,19 @@ void CommunicationHandler::receiveThreadFunction ( uint8_t deliveryType )
                         std::lock_guard<std::mutex> lock ( mReceiveQueueMutex );
                         mReceiveQueue.push ( message );
                         message = 0;
+                        
+                        //If the buffer is too large recycle the oldest message while we have the lock
+                        if (mReceiveQueue.size() < MAX_MESSAGE_BUFFER_SIZE) {
+                            message = mReceiveQueue.front();
+                            mReceiveQueue.pop();
+                        }
                 }
         }
 }
 
 void CommunicationHandler::sendThreadFunction()
 {
-        std::queue<Message*> messageQueue;
+        std::queue< std::pair<int, Message*> > messageQueue;
         while ( mRunning ) {
                 {
                         std::unique_lock<std::mutex> lk ( mSendQueueMutex );
@@ -134,14 +140,15 @@ void CommunicationHandler::sendThreadFunction()
                 }
 
                 while ( !messageQueue.empty() ) {
-                        Message *message = messageQueue.front();
+                        auto messageData = messageQueue.front();
                         messageQueue.pop();
-                        Communication *connection = mConnections[message->getCommunicationId()];
+                        Message *message = messageData.second;
+                        Communication *connection = mConnections[messageData.first];
                         bool ok = true;
                         if ( connection ) {
                                ok = connection->send ( message->getData(), message->getMessageSize() );
                         } else {
-                                std::cerr << "Did not find connection for delivery type: " << message->getCommunicationId() << ", is it enabled?" << std::endl;
+                                std::cerr << "Did not find connection for delivery type: " << messageData.first << ", is it enabled?" << std::endl;
                         }
 
                         messages()->release ( message );

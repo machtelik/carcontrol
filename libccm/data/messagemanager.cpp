@@ -36,7 +36,6 @@ Message *MessageManager::getMessage()
         }
         
         message->setSourceId(mDefaultSourceId);
-        message->setCommunicationId(0);
         message->setPayloadSize(0);
         
         return message ;

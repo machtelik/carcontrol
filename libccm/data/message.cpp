@@ -13,8 +13,7 @@ static const uint8_t HEADER_SOURCE_POS = 2;
 static const uint8_t HEADER_TYPE_POS = 3;
 
 Message::Message()  :
-        mData ( new char[MESSAGE_MAX_SIZE] ),
-        mCommunicationId ( 0 )
+        mData ( new char[MESSAGE_MAX_SIZE] )
 {
 }
 
@@ -25,7 +24,6 @@ Message::~Message()
 
 Message& Message::operator= ( const Message& other )
 {
-    mCommunicationId = other.getCommunicationId();
     memcpy(mData, other.mData, other.getMessageSize());
 }
 
@@ -97,16 +95,6 @@ void Message::setType ( uint8_t type )
 uint8_t Message::getType() const
 {
         return mData[HEADER_TYPE_POS];
-}
-
-uint8_t Message::getCommunicationId() const
-{
-        return mCommunicationId;
-}
-
-void Message::setCommunicationId ( uint8_t type )
-{
-        mCommunicationId = type;
 }
 
 }

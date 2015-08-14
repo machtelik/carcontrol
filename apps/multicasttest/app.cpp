@@ -5,6 +5,7 @@
 
 #include "libccm/data/messagemanager.h"
 #include "libccm/communication/communicationhandler.h"
+#include "libccm/communication/multicastcommunication.h"
 
 App::App ( int argc, char** argv ) :
         Component ( 1, argc, argv )
@@ -26,7 +27,7 @@ bool App::loop()
         std::size_t length = str.copy ( message->getPayload(), str.size() );
         message->getPayload() [length] = '\0';
         message->setPayloadSize ( length + 1 );
-         communication()->sendMessage ( message );
+         communication()->sendMessage ( ccm::MulticastCommunication::TYPE,  message );
         return true;
 }
 

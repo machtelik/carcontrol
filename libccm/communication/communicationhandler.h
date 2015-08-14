@@ -7,6 +7,7 @@
 #include <mutex>
 #include <condition_variable>
 #include <unordered_map>
+#include <utility>
 
 namespace ccm {
     
@@ -25,7 +26,7 @@ public:
             
     bool addCommunicationMethod(Communication *communication);
     
-    void sendMessage ( Message* message );
+    void sendMessage ( int communicationType, Message* message );
     
     void getReceivedMessages( std::queue< Message* > &messages);
     
@@ -45,7 +46,7 @@ private:
     std::unordered_map<uint8_t, Communication*> mConnections;
     std::unordered_map<uint8_t, std::thread*> mReceiveThreads;
   
-    std::queue<Message*> mSendQueue;
+    std::queue< std::pair<int, Message*> > mSendQueue;
      std::queue<Message*> mReceiveQueue;
 
      std::condition_variable mSendBarrier;

@@ -2,14 +2,14 @@
 
 namespace ccm {
   
-Communication::Communication ( uint8_t communicationId ) :
-    mCommunicationId(communicationId)
+Communication::Communication ( uint8_t communicationType ) :
+    mCommunicationType(communicationType)
 {
 }
 
-uint8_t Communication::communicationId()
+uint8_t Communication::communicationType()
 {
-    return mCommunicationId;
+    return mCommunicationType;
 }
     
 }

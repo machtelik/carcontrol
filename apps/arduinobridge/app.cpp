@@ -32,8 +32,7 @@ bool App::messageReceived ( const ccm::Message* message )
 {
         if(message->getType() == ccm::CarControlData::TYPE) {
             ccm::Message *messageCopy = communication()->messages()->getMessageCopy(message);
-            messageCopy->setCommunicationId(ccm::SerialCommunication::TYPE);
-            communication()->sendMessage(messageCopy);
+            communication()->sendMessage(ccm::SerialCommunication::TYPE, messageCopy);
         }
         return true;
 }

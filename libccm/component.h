@@ -1,7 +1,8 @@
 #ifndef __COMPONENT_H__
 #define __COMPONENT_H__
 
-#include <chrono>
+#include <mutex>
+#include <condition_variable>
 
 namespace ccm {
   
@@ -33,12 +34,16 @@ protected:
 private:
     volatile bool mRunning;
     
-    std::chrono::milliseconds mLoopInterval;
+    uint32_t mLoopInterval;
     
     int8_t mId;
     
     CommunicationHandler *mCommunicationHandler;
+    
+    std::condition_variable mWaitBarrier;
+    std::mutex mWaitMutex;
       
+    void handleLoop();
     bool handleReceivedMessages();
   
 };

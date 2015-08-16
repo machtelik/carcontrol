@@ -41,6 +41,7 @@ CommunicationHandler::~CommunicationHandler()
         }
 
         for ( int i = 0; i < mReceiveThreads.size(); ++i ) {
+            mReceiveThreads.at ( i )->join();
                 delete mReceiveThreads.at ( i );
         }
         
@@ -71,6 +72,7 @@ void CommunicationHandler::getReceivedMessages ( std::queue< Message* > &message
 bool CommunicationHandler::startCommunication()
 {
 
+        mRunning = true;
         mSendThread = new std::thread ( &CommunicationHandler::sendThreadFunction, this );
 
         return true;

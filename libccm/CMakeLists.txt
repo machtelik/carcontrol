@@ -8,6 +8,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 add_subdirectory(communication)
 add_subdirectory(data)
+add_subdirectory(util)
 
 SET(SRC_LIST
   ${SRC_LIST}

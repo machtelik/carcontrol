@@ -1,6 +1,7 @@
 #include "app.h"
 
 #include <iostream>
+#include <chrono>
 
 #include <communication/message/message.h>
 #include "communication/message/messagemanager.h"
@@ -20,6 +21,17 @@ bool App::begin()
 
 bool App::loop()
 {
+
+        
+        static auto time = std::chrono::high_resolution_clock::now();
+        auto t = std::chrono::high_resolution_clock::now();
+    
+        std::cout << std::chrono::time_point_cast<std::chrono::nanoseconds>(t).time_since_epoch().count() << "ns\n";
+        std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(t - time).count() << "ms\n";
+    
+        time = t;
+
+    
         std::cout << "Sending" << std::endl;
 
         ccm:: Message *message = communication()->messages()->getMessage();

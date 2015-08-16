@@ -4,12 +4,14 @@
 #include <stdlib.h>
 #include <iostream>
 #include <stdint.h>
+#include <time.h>
 
 #include "config.h"
 #include "communication/message/message.h"
 #include "communication/types/multicastcommunication.h"
 #include "communication/communicationhandler.h"
 #include "communication/message/messagemanager.h"
+#include "util/periodictimer.h"
 
 namespace ccm
 {
@@ -23,7 +25,10 @@ Component::Component ( int8_t id,  int argc, char** argv ) :
 
 Component::~Component()
 {
+    exit();
 }
+
+
 
 int Component::execute()
 {
@@ -45,24 +50,25 @@ int Component::execute()
 
         mRunning = true;
 
-        while ( mRunning ) {
-                auto startTime = std::chrono::high_resolution_clock::now();
+        PeriodicTimer loop(mLoopInterval, [&](){Component::handleLoop();});
+        
+        std::unique_lock<std::mutex> lk ( mWaitMutex );
+        mWaitBarrier.wait ( lk, [&]() {return mRunning;} );
 
+        return EXIT_SUCCESS;
+}
+
+void Component::handleLoop()
+{
                 if ( !handleReceivedMessages() ) {
                         std::cerr <<  "Error handeling message"   << std::endl;
-                        return EXIT_FAILURE;
+                        exit();
                 }
 
                 if ( !loop() ) {
                         std::cerr <<  "Error while execution loop"   << std::endl;
-                        return EXIT_FAILURE;
+                        exit();
                 }
-
-                auto dT = std::chrono::high_resolution_clock::now() - startTime;
-                std::this_thread::sleep_for ( mLoopInterval - dT );
-        }
-
-        return EXIT_SUCCESS;
 }
 
 bool Component::handleReceivedMessages()
@@ -86,7 +92,12 @@ bool Component::handleReceivedMessages()
 
 void Component::exit()
 {
-        mRunning = false;
+    mRunning = false;
+    mWaitBarrier.notify_all();
+        if (mCommunicationHandler) {
+            delete mCommunicationHandler;
+            mCommunicationHandler = 0;
+        }
 }
 
 uint8_t Component::getId()

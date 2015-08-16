@@ -1,11 +1,12 @@
 #include "app.h"
-#include <libccm/data/message.h>
 
 #include <iostream>
-#include "libccm/communication/serialcommunication.h"
-#include <libccm/communication/communicationhandler.h>
-#include "libccm/data/carcontroldata.h"
-#include <libccm/data/messagemanager.h>
+
+#include <communication/message/messagemanager.h>
+#include <communication/message/message.h>
+#include "communication/types/serialcommunication.h"
+#include <communication/communicationhandler.h>
+#include "data/carcontroldata.h"
 
 static const char* SERIAL_PORT = "/dev/ttyACM0";
 static const uint32_t SERIAL_BAUD_RATE = 9600;

@@ -1,5 +1,6 @@
 #include "carcontroldata.h"
-#include "message.h"
+
+#include "communication/message/message.h"
 
 namespace ccm {
     

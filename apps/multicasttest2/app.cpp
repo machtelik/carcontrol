@@ -1,11 +1,11 @@
 #include "app.h"
 
-#include <libccm/data/message.h>
+#include <communication/message/message.h>
 
 #include <iostream>
-#include "libccm/data/messagemanager.h"
-#include "libccm/communication/communicationhandler.h"
-#include "libccm/communication/multicastcommunication.h"
+#include "communication/message/messagemanager.h"
+#include "communication/communicationhandler.h"
+#include "communication/types/multicastcommunication.h"
 
 App::App ( int argc, char** argv ) :
         Component ( 0, argc, argv )

@@ -2,8 +2,8 @@
 
 #include <iostream>
 
-#include "data/messagemanager.h"
-#include "data/message.h"
+#include "communication/message/messagemanager.h"
+#include "communication/message/message.h"
 #include "communication.h"
 #include "config.h"
 
@@ -115,7 +115,7 @@ void CommunicationHandler::receiveThreadFunction ( uint8_t deliveryType )
                         message = 0;
                         
                         //If the buffer is too large recycle the oldest message while we have the lock
-                        if (mReceiveQueue.size() < MAX_MESSAGE_BUFFER_SIZE) {
+                        if (mReceiveQueue.size() >= MAX_MESSAGE_BUFFER_SIZE) {
                             message = mReceiveQueue.front();
                             mReceiveQueue.pop();
                         }
@@ -138,12 +138,13 @@ void CommunicationHandler::sendThreadFunction()
                                 mSendQueue.pop();
                         }
                 }
-
+                
                 while ( !messageQueue.empty() ) {
                         auto messageData = messageQueue.front();
                         messageQueue.pop();
                         Message *message = messageData.second;
                         Communication *connection = mConnections[messageData.first];
+                        
                         bool ok = true;
                         if ( connection ) {
                                ok = connection->send ( message->getData(), message->getMessageSize() );

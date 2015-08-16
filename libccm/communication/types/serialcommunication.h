@@ -4,7 +4,7 @@
 #include <netinet/in.h>
 #include <string>
 
-#include "communication.h"
+#include "communication/communication.h"
 
 namespace ccm {
 

@@ -1,7 +1,7 @@
 #ifndef __APP_H__
 #define __APP_H__
 
-#include <libccm/component.h>
+#include <component.h>
   
 class App : public ccm::Component {
   

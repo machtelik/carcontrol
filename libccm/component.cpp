@@ -6,10 +6,10 @@
 #include <stdint.h>
 
 #include "config.h"
-#include "data/message.h"
-#include "communication/multicastcommunication.h"
+#include "communication/message/message.h"
+#include "communication/types/multicastcommunication.h"
 #include "communication/communicationhandler.h"
-#include "data/messagemanager.h"
+#include "communication/message/messagemanager.h"
 
 namespace ccm
 {

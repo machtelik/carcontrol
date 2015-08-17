@@ -4,28 +4,30 @@
 #include <mutex>
 #include <stack>
 
-namespace ccm {
+namespace ccm
+{
 
-    class Message;
-    
-class MessageManager {
-  
+class Message;
+
+class MessageManager
+{
+
 public:
-    MessageManager();  
-     MessageManager(int defaultSourceId);    
+    MessageManager();
+    MessageManager( int defaultSourceId );
     virtual ~MessageManager();
-  
+
     Message *getMessage();
-    Message* getMessageCopy(const Message *message);
-    void release(Message *message);
-  
+    Message *getMessageCopy( const Message *message );
+    void release( Message *message );
+
 protected:
-  
+
 private:
-    
+
     int mDefaultSourceId;
-    
-    std::stack<Message*> mMessageBuffer;
+
+    std::stack<Message *> mMessageBuffer;
     std::mutex mMessageBufferMutex;
 
 };
@@ -33,4 +35,4 @@ private:
 } // ccm
 
 #endif /* __MESSSAGEMANAGER_H__ */
- 
+

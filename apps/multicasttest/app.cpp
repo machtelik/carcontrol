@@ -8,43 +8,40 @@
 #include "communication/communicationhandler.h"
 #include "communication/types/multicastcommunication.h"
 
-App::App ( int argc, char** argv ) :
-        Component ( 1, argc, argv )
+App::App( int argc, char **argv ) :
+    Component( 1, argc, argv )
 {
 }
 
 bool App::begin()
 {
 
-        return true;
+    return true;
 }
 
 bool App::loop()
 {
 
-        
-        static auto time = std::chrono::high_resolution_clock::now();
-        auto t = std::chrono::high_resolution_clock::now();
-    
-        std::cout << std::chrono::time_point_cast<std::chrono::nanoseconds>(t).time_since_epoch().count() << "ns\n";
-        std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(t - time).count() << "ms\n";
-    
-        time = t;
 
-    
-        std::cout << "Sending" << std::endl;
+    static auto time = std::chrono::high_resolution_clock::now();
+    auto t = std::chrono::high_resolution_clock::now();
 
-        ccm:: Message *message = communication()->messages()->getMessage();
-        std::string str ( "Message " + getId() );
-        std::size_t length = str.copy ( message->getPayload(), str.size() );
-        message->getPayload() [length] = '\0';
-        message->setPayloadSize ( length + 1 );
-         communication()->sendMessage ( ccm::MulticastCommunication::TYPE,  message );
-        return true;
+    std::cout << std::chrono::time_point_cast<std::chrono::nanoseconds>( t ).time_since_epoch().count() << "ns\n";
+    std::cout << std::chrono::duration_cast<std::chrono::milliseconds>( t - time ).count() << "ms\n";
+
+    time = t;
+
+    ccm:: Message *message = communication()->messages()->getMessage();
+    std::string str( "Message" );
+    std::size_t length = str.copy( message->getPayload(), str.size() );
+    message->getPayload() [length] = '\0';
+    message->setPayloadSize( length + 1 );
+    communication()->sendMessage( ccm::MulticastCommunication::TYPE,  message );
+    return true;
 }
 
-bool App::messageReceived ( const ccm::Message* message )
+bool App::messageReceived( const ccm::Message *message )
 {
-        std::cout << "Got: " << message->getPayload() << std::endl;
-        return true;
+    std::cout << "Got: " << message->getPayload() << std::endl;
+    return true;
 }

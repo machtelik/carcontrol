@@ -9,6 +9,6 @@ static const uint8_t MAX_MESSAGE_BUFFER_SIZE = 64; //messages
 static const uint16_t DEFAULT_LOOP_DURATION = 33; //msec
 
 static const uint16_t MULTICAST_PORT = 12345;
-static const char* MULTICAST_IP = "ff02::1";
+static const char *MULTICAST_IP = "ff02::1";
 
 #endif /* _CONFIG_H_ */

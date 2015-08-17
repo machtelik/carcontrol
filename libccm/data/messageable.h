@@ -1,19 +1,21 @@
 #ifndef __MESSSAGEABLE_H__
 #define __MESSSAGEABLE_H__
 
-namespace ccm {
+namespace ccm
+{
 
 class Message;
-    
-class Messageable {
-  
+
+class Messageable
+{
+
 public:
-    
-    virtual bool fromMessage(const Message *message) = 0;
-    virtual bool toMessage(Message *message) const = 0;
-  
+
+    virtual bool fromMessage( const Message *message ) = 0;
+    virtual bool toMessage( Message *message ) const = 0;
+
 protected:
-  
+
 private:
 
 };
@@ -21,4 +23,4 @@ private:
 } // ccm
 
 #endif /* __MESSSAGEABLE_H__ */
- 
+

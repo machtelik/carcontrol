@@ -3,59 +3,60 @@
 #include "message.h"
 #include "config.h"
 
-namespace ccm {
-    
-MessageManager::MessageManager ( int defaultSourceId ) :
-mDefaultSourceId(defaultSourceId)
+namespace ccm
+{
+
+MessageManager::MessageManager( int defaultSourceId ) :
+    mDefaultSourceId( defaultSourceId )
 {
 }
 
 MessageManager::~MessageManager()
 {
-        while ( !mMessageBuffer.empty() ) {
-                delete mMessageBuffer.top();
-                mMessageBuffer.pop();
-        }
+    while( !mMessageBuffer.empty() ) {
+        delete mMessageBuffer.top();
+        mMessageBuffer.pop();
+    }
 }
 
 Message *MessageManager::getMessage()
 {
-        Message *message = 0;
-        
-        {
-                std::lock_guard<std::mutex> lock ( mMessageBufferMutex );
+    Message *message = 0;
 
-                if ( !mMessageBuffer.empty() ) {
-                        message = mMessageBuffer.top();
-                        mMessageBuffer.pop();
-                }
-        }
+    {
+        std::lock_guard<std::mutex> lock( mMessageBufferMutex );
 
-        if ( !message ) {
-                message = new Message();
+        if( !mMessageBuffer.empty() ) {
+            message = mMessageBuffer.top();
+            mMessageBuffer.pop();
         }
-        
-        message->setSourceId(mDefaultSourceId);
-        message->setPayloadSize(0);
-        
-        return message ;
+    }
+
+    if( !message ) {
+        message = new Message();
+    }
+
+    message->setSourceId( mDefaultSourceId );
+    message->setPayloadSize( 0 );
+
+    return message ;
 }
 
-Message* MessageManager::getMessageCopy(const Message *message)
+Message *MessageManager::getMessageCopy( const Message *message )
 {
     Message *copy = getMessage();
-    copy->operator=(*message);
+    copy->operator= ( *message );
     return copy;
 }
 
-void MessageManager::release ( Message *message )
+void MessageManager::release( Message *message )
 {
-        std::lock_guard<std::mutex> lock ( mMessageBufferMutex );
-        if(mMessageBuffer.size() < MAX_MESSAGE_BUFFER_SIZE) {
-                    mMessageBuffer.push ( message );
-        } else {
-            delete message;
-        }
+    std::lock_guard<std::mutex> lock( mMessageBufferMutex );
+    if( mMessageBuffer.size() < MAX_MESSAGE_BUFFER_SIZE ) {
+        mMessageBuffer.push( message );
+    } else {
+        delete message;
+    }
 }
 
 }

@@ -109,6 +109,7 @@ void CommunicationHandler::receiveThreadFunction( uint8_t deliveryType )
 
         if( dataSize != message->getMessageSize() ) {
             std::cerr << "Somethings wrong with the message size: " << dataSize << " != " << message->getMessageSize() << std::endl;
+            continue;
         }
 
         //Only handle foreign messages

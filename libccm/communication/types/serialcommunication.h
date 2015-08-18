@@ -29,6 +29,9 @@ protected:
     static int createSocket( const std::string &device );
     static bool setupSocket( int socketDesc, int speed, int parity );
 
+    char readChar();
+    void writeChar( char data );
+
 private:
     int mSocketDesc;
     std::string mDevice;

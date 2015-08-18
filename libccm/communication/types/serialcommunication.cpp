@@ -12,6 +12,13 @@
 namespace ccm
 {
 
+static const uint8_t MESSAGE_START = 0;
+static const uint8_t MESSAGE_END = 1;
+static const uint8_t MESSAGE_ESCAPE = 2;
+static const uint8_t MESSAGE_START_ESCAPED = 3;
+static const uint8_t MESSAGE_END_ESCAPED = 4;
+static const uint8_t MESSAGE_ESCAPE_ESCAPED = 5;
+
 SerialCommunication::SerialCommunication( const std::string &device, int baudRate ) :
     Communication( TYPE ),
     mSocketDesc( -1 ),
@@ -75,9 +82,25 @@ bool SerialCommunication::send( const char *data, uint16_t length )
         return false;
     }
 
-    if( write( mSocketDesc, data, length ) != length ) {
-        return false;
+    //We need to delimit the data
+    writeChar( MESSAGE_START );
+
+    for( int i = 0; i < length; ++i ) {
+        if( data[i] == MESSAGE_START ) {
+            writeChar( MESSAGE_ESCAPE );
+            writeChar( MESSAGE_START_ESCAPED );
+        } else if( data[i] == MESSAGE_END ) {
+            writeChar( MESSAGE_ESCAPE );
+            writeChar( MESSAGE_END_ESCAPED );
+        } else if( data[i] == MESSAGE_ESCAPE ) {
+            writeChar( MESSAGE_ESCAPE );
+            writeChar( MESSAGE_ESCAPE_ESCAPED );
+        } else {
+            writeChar( data[i] );
+        }
     }
+
+    writeChar( MESSAGE_END );
 
     return true;
 }
@@ -89,26 +112,84 @@ u_int16_t SerialCommunication::receive( char *data, uint16_t maxLength )
         return -1;
     }
 
-    uint16_t readHeaderSize = read( mSocketDesc, data, MESSAGE_HEADER_SIZE );
-    if( readHeaderSize != MESSAGE_HEADER_SIZE ) {
-        std::cerr << "Could not read the header"  << std::endl;
-        return -1;
+    int readDataBytes = 0;
+
+    bool readingData = false;
+    bool readEscape = false;
+
+    //Try to read a complete message
+    while( readDataBytes < maxLength ) {
+        char readData = readChar();
+
+        switch( readData ) {
+        case MESSAGE_START:
+            readDataBytes = 0;
+            readingData = true;
+            readEscape = false;
+            break;
+
+        case MESSAGE_ESCAPE:
+            if( readingData && !readEscape ) {
+                readEscape = true;
+            } else {
+                readingData = false;
+            }
+            break;
+
+        case MESSAGE_END:
+            if( readingData && !readEscape ) {
+                return readDataBytes;
+            } else {
+                readingData = false;
+            }
+            break;
+
+        case MESSAGE_START_ESCAPED:
+            if( readingData && readEscape ) {
+                data[readDataBytes++] = MESSAGE_START;
+            } else {
+                readingData = false;
+            }
+            break;
+
+        case MESSAGE_ESCAPE_ESCAPED:
+            if( readingData && readEscape ) {
+                data[readDataBytes++] = MESSAGE_ESCAPE;
+            } else {
+                readingData = false;
+            }
+            break;
+
+        case MESSAGE_END_ESCAPED:
+            if( readingData && readEscape ) {
+                data[readDataBytes++] = MESSAGE_END;
+            } else {
+                readingData = false;
+            }
+            break;
+
+
+        default:
+            if( readingData ) {
+                data[readDataBytes++] = readData;
+            }
+            break;
+        }
     }
 
-    uint16_t payloadSize = ( ( data[1] << 8 ) + data[0] ) - readHeaderSize;
+    return -1;
+}
 
-    if( readHeaderSize + payloadSize > maxLength ) {
-        std::cerr << "Packet too large"  << std::endl;
-        return -1;
-    }
+char SerialCommunication::readChar()
+{
+    char data;
+    read( mSocketDesc, &data, 1 );
+    return data;
+}
 
-    uint16_t readPayloadSize = read( mSocketDesc, &data[readHeaderSize], payloadSize );
-
-    if( readPayloadSize != payloadSize ) {
-        std::cerr << "Cold not read payload"  << std::endl;
-    }
-
-    return readHeaderSize + readPayloadSize;
+void SerialCommunication::writeChar( char data )
+{
+    write( mSocketDesc, &data, 1 );
 }
 
 bool SerialCommunication::setupSocket( int socketDesc, int speed, int parity )

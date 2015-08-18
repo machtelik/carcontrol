@@ -8,9 +8,9 @@
 namespace ccm
 {
 
-static const uint8_t HEADER_LENGTH_POS = 0;
-static const uint8_t HEADER_SOURCE_POS = 2;
-static const uint8_t HEADER_TYPE_POS = 3;
+static const uint8_t HEADER_LENGTH_POS = 2;
+static const uint8_t HEADER_SOURCE_POS = 1;
+static const uint8_t HEADER_TYPE_POS = 0;
 
 Message::Message()  :
     mData( new char[MESSAGE_MAX_SIZE] )
@@ -51,15 +51,13 @@ void Message::setPayloadSize( uint16_t size )
 {
     size = size < getMaxPayloadSize() ? size : getMaxPayloadSize();
 
-    size += MESSAGE_HEADER_SIZE;
-
     mData[HEADER_LENGTH_POS] = size & 0xff;
     mData[HEADER_LENGTH_POS + 1] = ( size >> 8 );
 }
 
 uint16_t Message::getPayloadSize()  const
 {
-    return getMessageSize()  - MESSAGE_HEADER_SIZE;
+    return ( mData[HEADER_LENGTH_POS + 1] << 8 ) + mData[HEADER_LENGTH_POS];
 }
 
 uint16_t Message::getMaxPayloadSize()
@@ -74,7 +72,7 @@ uint16_t Message::getMaxMessageSize()
 
 uint16_t Message::getMessageSize() const
 {
-    return ( mData[HEADER_LENGTH_POS + 1] << 8 ) + mData[HEADER_LENGTH_POS];
+    return getPayloadSize() + MESSAGE_HEADER_SIZE;
 }
 
 void Message::setSourceId( uint8_t source )

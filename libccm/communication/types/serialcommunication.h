@@ -22,7 +22,7 @@ public:
     bool disconnect();
 
     bool send( const char *data, uint16_t length );
-    u_int16_t receive( char *data, uint16_t maxLength );
+    uint16_t receive( char* data, uint16_t maxLength );
 
 protected:
 

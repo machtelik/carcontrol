@@ -105,7 +105,7 @@ bool SerialCommunication::send( const char *data, uint16_t length )
     return true;
 }
 
-u_int16_t SerialCommunication::receive( char *data, uint16_t maxLength )
+uint16_t SerialCommunication::receive( char *data, uint16_t maxLength )
 {
     if( mSocketDesc == -1 ) {
         std::cerr << "Not connected"  << std::endl;
@@ -147,6 +147,7 @@ u_int16_t SerialCommunication::receive( char *data, uint16_t maxLength )
         case MESSAGE_START_ESCAPED:
             if( readingData && readEscape ) {
                 data[readDataBytes++] = MESSAGE_START;
+                readEscape = false;
             } else {
                 readingData = false;
             }
@@ -155,6 +156,7 @@ u_int16_t SerialCommunication::receive( char *data, uint16_t maxLength )
         case MESSAGE_ESCAPE_ESCAPED:
             if( readingData && readEscape ) {
                 data[readDataBytes++] = MESSAGE_ESCAPE;
+                readEscape = false;
             } else {
                 readingData = false;
             }
@@ -163,6 +165,7 @@ u_int16_t SerialCommunication::receive( char *data, uint16_t maxLength )
         case MESSAGE_END_ESCAPED:
             if( readingData && readEscape ) {
                 data[readDataBytes++] = MESSAGE_END;
+                readEscape = false;
             } else {
                 readingData = false;
             }

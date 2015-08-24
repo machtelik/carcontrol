@@ -5,21 +5,32 @@
 
 class Steering;
 class Motor;
+class Communication;
 
 #include "config.h"
 #include "steering.h"
 #include "motor.h"
+#include "communication.h"
+
+void setup();
+void loop();
+void dispatch(char *message, uint16_t length);
 
 void setup()
 {
+    Communication::init();
     Motor::init();
     Steering::init();
-    Serial.begin( 9600 );
 }
 
 void loop()
 {
-    Motor::setMotorStatus( Forward, 20 );
-    delay( 1000 );
+    Communication::receive(&dispatch);
+}
+
+void dispatch(char *message, uint16_t length)
+{
+    message[1] = 42;
+    Communication::send(message, length);
 }
 

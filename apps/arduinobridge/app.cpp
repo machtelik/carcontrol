@@ -5,6 +5,7 @@
 #include <communication/message/messagemanager.h>
 #include <communication/message/message.h>
 #include "communication/types/serialcommunication.h"
+#include "communication/types/multicastcommunication.h"
 #include <communication/communicationhandler.h>
 #include "data/carcontroldata.h"
 
@@ -31,9 +32,16 @@ bool App::loop()
 
 bool App::messageReceived( const ccm::Message *message )
 {
-    if( message->getType() == ccm::CarControlData::TYPE ) {
+    if( message->getSourceId() != 42) {
+        std::cout << "Network: " << message->getPayload() << std::endl;
         ccm::Message *messageCopy = communication()->messages()->getMessageCopy( message );
+        messageCopy->setSourceId(getId());
         communication()->sendMessage( ccm::SerialCommunication::TYPE, messageCopy );
+    } else {
+        ccm::Message *messageCopy = communication()->messages()->getMessageCopy( message );
+        std::cout << "Serial: " << message->getPayload() << std::endl;
+        messageCopy->setSourceId(getId());
+        communication()->sendMessage( ccm::MulticastCommunication::TYPE, messageCopy );
     }
     return true;
 }

@@ -29,7 +29,7 @@ protected:
 
     virtual bool begin() = 0;
     virtual bool loop() = 0;
-    virtual bool messageReceived( const Message *message ) = 0;
+    virtual bool messageReceived( uint8_t communicationType, const Message *message ) = 0;
 
     CommunicationHandler *communication();
 

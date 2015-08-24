@@ -40,7 +40,7 @@ bool App::loop()
     return true;
 }
 
-bool App::messageReceived( const ccm::Message *message )
+bool App::messageReceived( uint8_t communicationType, const ccm::Message *message )
 {
     std::cout << "Got: " << message->getPayload() << std::endl;
     return true;

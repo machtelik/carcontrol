@@ -76,13 +76,15 @@ void Component::handleLoop()
 
 bool Component::handleReceivedMessages()
 {
-    std::queue<Message *> messageQueue;
+    std::queue< std::pair<uint8_t, Message *> > messageQueue;
     communication()->getReceivedMessages( messageQueue );
 
     while( !messageQueue.empty() ) {
-        Message *message = messageQueue.front();
+        auto messageData = messageQueue.front();
         messageQueue.pop();
-        bool handled = messageReceived( message );
+        uint8_t communicationType = messageData.first;
+        Message *message = messageData.second;
+        bool handled = messageReceived( communicationType, message );
         communication()->messages()->release( message );
 
         if( !handled ) {

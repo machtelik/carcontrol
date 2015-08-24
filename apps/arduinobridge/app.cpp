@@ -30,17 +30,14 @@ bool App::loop()
     return true;
 }
 
-bool App::messageReceived( const ccm::Message *message )
+bool App::messageReceived( uint8_t communicationType, const ccm::Message *message )
 {
-    if( message->getSourceId() != 42) {
-        std::cout << "Network: " << message->getPayload() << std::endl;
+    
+    if( communicationType == ccm::MulticastCommunication::TYPE) {
         ccm::Message *messageCopy = communication()->messages()->getMessageCopy( message );
-        messageCopy->setSourceId(getId());
         communication()->sendMessage( ccm::SerialCommunication::TYPE, messageCopy );
-    } else {
+    } else if( communicationType == ccm::SerialCommunication::TYPE) {
         ccm::Message *messageCopy = communication()->messages()->getMessageCopy( message );
-        std::cout << "Serial: " << message->getPayload() << std::endl;
-        messageCopy->setSourceId(getId());
         communication()->sendMessage( ccm::MulticastCommunication::TYPE, messageCopy );
     }
     return true;

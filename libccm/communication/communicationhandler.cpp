@@ -29,7 +29,7 @@ CommunicationHandler::~CommunicationHandler()
     }
 
     while( !mReceiveQueue.empty() ) {
-        mMessageManager->release( mReceiveQueue.front() );
+        mMessageManager->release( mReceiveQueue.front().second );
         mReceiveQueue.pop();
     }
 
@@ -54,7 +54,7 @@ MessageManager *CommunicationHandler::messages()
     return mMessageManager;
 }
 
-void CommunicationHandler::getReceivedMessages( std::queue< Message * > &messages )
+void CommunicationHandler::getReceivedMessages( std::queue< std::pair< uint8_t, ccm::Message * > > &messages )
 {
     std::lock_guard<std::mutex> lock( mReceiveQueueMutex );
     while( !mReceiveQueue.empty() ) {
@@ -115,12 +115,12 @@ void CommunicationHandler::receiveThreadFunction( uint8_t deliveryType )
         //Only handle foreign messages
         if( mSourceId != message->getSourceId() ) {
             std::lock_guard<std::mutex> lock( mReceiveQueueMutex );
-            mReceiveQueue.push( message );
+            mReceiveQueue.push( std::pair<uint8_t, Message *>(deliveryType, message) );
             message = 0;
 
             //If the buffer is too large recycle the oldest message while we have the lock
             if( mReceiveQueue.size() >= MAX_MESSAGE_BUFFER_SIZE ) {
-                message = mReceiveQueue.front();
+                message = mReceiveQueue.front().second;
                 mReceiveQueue.pop();
             }
         }
@@ -149,6 +149,8 @@ void CommunicationHandler::sendThreadFunction()
             Message *message = messageData.second;
             Communication *connection = mConnections[messageData.first];
 
+            message->setSourceId(mSourceId);
+            
             bool ok = true;
             if( connection ) {
                 ok = connection->send( message->getData(), message->getMessageSize() );

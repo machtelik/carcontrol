@@ -30,7 +30,7 @@ public:
 
     void sendMessage( int communicationType, Message *message );
 
-    void getReceivedMessages( std::queue< Message * > &messages );
+    void getReceivedMessages( std::queue< std::pair<uint8_t, Message *> > &messages );
 
     MessageManager *messages();
 
@@ -48,8 +48,8 @@ private:
     std::unordered_map<uint8_t, Communication *> mConnections;
     std::unordered_map<uint8_t, std::thread *> mReceiveThreads;
 
-    std::queue< std::pair<int, Message *> > mSendQueue;
-    std::queue<Message *> mReceiveQueue;
+    std::queue< std::pair<uint8_t, Message *> > mSendQueue;
+    std::queue< std::pair<uint8_t, Message *> > mReceiveQueue;
 
     std::condition_variable mSendBarrier;
 

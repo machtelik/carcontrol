@@ -3,7 +3,12 @@
 #include <Arduino.h>
 #include "config.h"
 
-void Motor::init()
+namespace Motor {
+
+void setMotorStatusPins( MotorStatus motorStatus );
+void setupPWMFrequency();
+
+void setup()
 {
     pinMode( PIN_MOTOR_PWM, OUTPUT );
     pinMode( PIN_MOTOR_INA, OUTPUT );
@@ -12,12 +17,12 @@ void Motor::init()
     setMotorStatus( Neutral );
 }
 
-void Motor::setMotorStatus( MotorStatus motorStatus )
+void setMotorStatus( MotorStatus motorStatus )
 {
     setMotorStatus( motorStatus, 0 );
 }
 
-void Motor::setMotorStatus( MotorStatus motorStatus, uint8_t speed )
+void setMotorStatus( MotorStatus motorStatus, uint8_t speed )
 {
     setMotorStatusPins( motorStatus );
 
@@ -29,7 +34,7 @@ void Motor::setMotorStatus( MotorStatus motorStatus, uint8_t speed )
     analogWrite( PIN_MOTOR_PWM, pwm );
 }
 
-void Motor::setMotorStatusPins( MotorStatus motorStatus )
+void setMotorStatusPins( MotorStatus motorStatus )
 {
     switch( motorStatus ) {
     case Neutral:
@@ -54,3 +59,4 @@ void Motor::setMotorStatusPins( MotorStatus motorStatus )
     }
 }
 
+}

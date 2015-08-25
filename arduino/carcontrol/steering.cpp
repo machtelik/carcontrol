@@ -1,18 +1,23 @@
 #include "steering.h"
 
 #include <Arduino.h>
+#include <Servo.h>
+
 #include "config.h"
 
-Servo Steering::mSteeringServo;
+
+namespace Steering {
+
+Servo mSteeringServo;
 
 
-void Steering::init()
+void setup()
 {
     mSteeringServo.attach( PIN_STEERING_SERVO );
     steer( 0 );
 }
 
-void Steering::steer( int8_t direction )
+void steer( int8_t direction )
 {
     direction = min( direction, STEERING_DEVIATION );
     direction = max( direction, -STEERING_DEVIATION );
@@ -22,3 +27,4 @@ void Steering::steer( int8_t direction )
     mSteeringServo.write( pos );
 }
 
+}

@@ -82,21 +82,28 @@ bool SerialCommunication::send( const char *data, uint16_t length )
         return false;
     }
 
-    //We need to delimit the data
     writeChar( MESSAGE_START );
 
     for( int i = 0; i < length; ++i ) {
-        if( data[i] == MESSAGE_START ) {
-            writeChar( MESSAGE_ESCAPE );
-            writeChar( MESSAGE_START_ESCAPED );
-        } else if( data[i] == MESSAGE_END ) {
-            writeChar( MESSAGE_ESCAPE );
-            writeChar( MESSAGE_END_ESCAPED );
-        } else if( data[i] == MESSAGE_ESCAPE ) {
-            writeChar( MESSAGE_ESCAPE );
-            writeChar( MESSAGE_ESCAPE_ESCAPED );
-        } else {
-            writeChar( data[i] );
+        switch(data[i]) {
+            case MESSAGE_START:
+                writeChar( MESSAGE_ESCAPE );
+                writeChar( MESSAGE_START_ESCAPED );
+                break;
+                
+            case MESSAGE_END:
+                writeChar( MESSAGE_ESCAPE );
+                writeChar( MESSAGE_END_ESCAPED );
+                break;
+                
+            case MESSAGE_ESCAPE:
+                writeChar( MESSAGE_ESCAPE );
+                writeChar( MESSAGE_ESCAPE_ESCAPED );
+                break;
+                
+            default:
+                writeChar( data[i] );
+                break;
         }
     }
 
@@ -113,9 +120,8 @@ uint16_t SerialCommunication::receive( char *data, uint16_t maxLength )
     }
 
     int readDataBytes = 0;
-
-    bool readingData = false;
-    bool readEscape = false;
+    
+    ReceiveState state = WAIT_FOR_START;
 
     //Try to read a complete message
     while( readDataBytes < maxLength ) {
@@ -124,57 +130,58 @@ uint16_t SerialCommunication::receive( char *data, uint16_t maxLength )
         switch( readData ) {
         case MESSAGE_START:
             readDataBytes = 0;
-            readingData = true;
-            readEscape = false;
+            state = READING_CHAR;
             break;
 
         case MESSAGE_ESCAPE:
-            if( readingData && !readEscape ) {
-                readEscape = true;
+            if( state == READING_CHAR ) {
+                state = READING_ESCAPE;
             } else {
-                readingData = false;
+                state = WAIT_FOR_START;
             }
             break;
 
         case MESSAGE_END:
-            if( readingData && !readEscape ) {
+            if( state == READING_CHAR ) {
                 return readDataBytes;
             } else {
-                readingData = false;
+                state = WAIT_FOR_START;
             }
             break;
 
         case MESSAGE_START_ESCAPED:
-            if( readingData && readEscape ) {
+            if( state == READING_ESCAPE ) {
                 data[readDataBytes++] = MESSAGE_START;
-                readEscape = false;
+                state = READING_CHAR;
             } else {
-                readingData = false;
+                state = WAIT_FOR_START;
             }
             break;
 
         case MESSAGE_ESCAPE_ESCAPED:
-            if( readingData && readEscape ) {
+            if( state == READING_ESCAPE ) {
                 data[readDataBytes++] = MESSAGE_ESCAPE;
-                readEscape = false;
+                state = READING_CHAR;
             } else {
-                readingData = false;
+                state = WAIT_FOR_START;
             }
             break;
 
         case MESSAGE_END_ESCAPED:
-            if( readingData && readEscape ) {
+            if( state == READING_ESCAPE ) {
                 data[readDataBytes++] = MESSAGE_END;
-                readEscape = false;
+                state = READING_CHAR;
             } else {
-                readingData = false;
+                state = WAIT_FOR_START;
             }
             break;
 
 
         default:
-            if( readingData ) {
+            if( state == READING_CHAR ) {
                 data[readDataBytes++] = readData;
+            } else {
+                state = WAIT_FOR_START;
             }
             break;
         }

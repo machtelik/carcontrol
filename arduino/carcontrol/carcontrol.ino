@@ -3,10 +3,6 @@
 
 #include <stdint.h>
 
-class Steering;
-class Motor;
-class Communication;
-
 #include "config.h"
 #include "steering.h"
 #include "motor.h"
@@ -18,9 +14,9 @@ void dispatch(char *message, uint16_t length);
 
 void setup()
 {
-    Communication::init();
-    Motor::init();
-    Steering::init();
+    Communication::setup();
+    Motor::setup();
+    Steering::setup();
 }
 
 void loop()

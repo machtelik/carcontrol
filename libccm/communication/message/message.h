@@ -20,7 +20,7 @@ public:
     void setType( uint8_t type );
 
     uint8_t getSourceId() const;
-    void setSourceId( uint8_t type );
+    void setSourceId( uint8_t source );
 
     char *getPayload();
     const char *getPayload() const;

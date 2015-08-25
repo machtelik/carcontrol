@@ -2,22 +2,15 @@
 #define _STEERING_H_
 
 #include <stdint.h>
-#include <Servo.h>
 
-class Steering
+namespace Steering
 {
 
-public:
+    void setup();
 
-    static void init();
-
-    static void neutral();
-    static void steer( int8_t direction );
-    static int8_t position();
-
-private:
-
-    static Servo mSteeringServo;
+    void neutral();
+    void steer( int8_t direction );
+    int8_t position();
 
 };
 

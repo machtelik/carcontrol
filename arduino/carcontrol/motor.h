@@ -5,20 +5,13 @@
 
 #include "config.h"
 
-class Motor
+namespace Motor
 {
 
-public:
+    void setup();
 
-    static void init();
-
-    static void setMotorStatus( MotorStatus motorStatus );
-    static void setMotorStatus( MotorStatus motorStatus, uint8_t speed );
-
-private:
-
-    static void setMotorStatusPins( MotorStatus motorStatus );
-    static void setupPWMFrequency();
+    void setMotorStatus( MotorStatus motorStatus );
+    void setMotorStatus( MotorStatus motorStatus, uint8_t speed );
 
 };
 

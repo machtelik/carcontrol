@@ -22,12 +22,12 @@ public:
     bool disconnect();
 
     bool send( const char *data, uint16_t length );
-    uint16_t receive( char* data, uint16_t maxLength );
+    uint16_t receive( char *data, uint16_t maxLength );
 
 protected:
 
     enum ReceiveState {WAIT_FOR_START = 0, READING_CHAR = 1, READING_ESCAPE = 2};
-    
+
     static int createSocket( const std::string &device );
     static bool setupSocket( int socketDesc, int speed, int parity );
 

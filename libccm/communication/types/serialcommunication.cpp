@@ -85,25 +85,25 @@ bool SerialCommunication::send( const char *data, uint16_t length )
     writeChar( MESSAGE_START );
 
     for( int i = 0; i < length; ++i ) {
-        switch(data[i]) {
-            case MESSAGE_START:
-                writeChar( MESSAGE_ESCAPE );
-                writeChar( MESSAGE_START_ESCAPED );
-                break;
-                
-            case MESSAGE_END:
-                writeChar( MESSAGE_ESCAPE );
-                writeChar( MESSAGE_END_ESCAPED );
-                break;
-                
-            case MESSAGE_ESCAPE:
-                writeChar( MESSAGE_ESCAPE );
-                writeChar( MESSAGE_ESCAPE_ESCAPED );
-                break;
-                
-            default:
-                writeChar( data[i] );
-                break;
+        switch( data[i] ) {
+        case MESSAGE_START:
+            writeChar( MESSAGE_ESCAPE );
+            writeChar( MESSAGE_START_ESCAPED );
+            break;
+
+        case MESSAGE_END:
+            writeChar( MESSAGE_ESCAPE );
+            writeChar( MESSAGE_END_ESCAPED );
+            break;
+
+        case MESSAGE_ESCAPE:
+            writeChar( MESSAGE_ESCAPE );
+            writeChar( MESSAGE_ESCAPE_ESCAPED );
+            break;
+
+        default:
+            writeChar( data[i] );
+            break;
         }
     }
 
@@ -120,7 +120,7 @@ uint16_t SerialCommunication::receive( char *data, uint16_t maxLength )
     }
 
     int readDataBytes = 0;
-    
+
     ReceiveState state = WAIT_FOR_START;
 
     //Try to read a complete message

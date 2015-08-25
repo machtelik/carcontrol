@@ -115,7 +115,7 @@ void CommunicationHandler::receiveThreadFunction( uint8_t deliveryType )
         //Only handle foreign messages
         if( mSourceId != message->getSourceId() ) {
             std::lock_guard<std::mutex> lock( mReceiveQueueMutex );
-            mReceiveQueue.push( std::pair<uint8_t, Message *>(deliveryType, message) );
+            mReceiveQueue.push( std::pair<uint8_t, Message *>( deliveryType, message ) );
             message = 0;
 
             //If the buffer is too large recycle the oldest message while we have the lock
@@ -149,8 +149,8 @@ void CommunicationHandler::sendThreadFunction()
             Message *message = messageData.second;
             Communication *connection = mConnections[messageData.first];
 
-            message->setSourceId(mSourceId);
-            
+            message->setSourceId( mSourceId );
+
             bool ok = true;
             if( connection ) {
                 ok = connection->send( message->getData(), message->getMessageSize() );

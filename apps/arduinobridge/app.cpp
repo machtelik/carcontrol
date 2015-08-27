@@ -22,6 +22,8 @@ bool App::begin()
     bool ok = true;
     ok |= communication()->addCommunicationMethod( new ccm::SerialCommunication( SERIAL_PORT, SERIAL_BAUD_RATE ) );
 
+    disableLoop();
+    
     return ok;
 }
 

@@ -13,6 +13,7 @@ class Message;
 class Communication;
 class Messageable;
 class CommunicationHandler;
+class PeriodicTimer;
 
 class Component : public EventLoop
 {
@@ -27,8 +28,6 @@ public:
 
     uint8_t getId();
 
-    void postMessage( uint8_t communicationType, Message *message );
-
 protected:
 
     virtual bool begin() = 0;
@@ -36,10 +35,13 @@ protected:
     virtual bool messageReceived( uint8_t communicationType, const Message *message ) = 0;
 
     CommunicationHandler *communication();
+    void disableLoop();
 
 private:
     volatile bool mRunning;
 
+    PeriodicTimer *mLoopTimer;
+    bool mLoopEnabled;
     uint32_t mLoopInterval;
 
     int8_t mId;
@@ -48,6 +50,8 @@ private:
 
     void handleLoopEvent();
     void handleMessageEvent( uint8_t communicationType, Message *message );
+    void postMessage( uint8_t communicationType, Message *message );
+
 
 };
 

@@ -15,7 +15,7 @@ App::App( int argc, char **argv ) :
 
 bool App::begin()
 {
-
+    disableLoop();
     return true;
 }
 

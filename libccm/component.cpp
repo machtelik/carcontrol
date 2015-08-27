@@ -19,6 +19,8 @@ namespace ccm
 Component::Component( int8_t id,  int argc, char **argv ) :
     EventLoop(),
     mRunning( false ),
+    mLoopTimer( 0 ),
+    mLoopEnabled( true ),
     mLoopInterval( DEFAULT_LOOP_DURATION ),
     mCommunicationHandler( new CommunicationHandler( id ) )
 {
@@ -30,17 +32,21 @@ Component::Component( int8_t id,  int argc, char **argv ) :
 Component::~Component()
 {
     exit();
+
     if( mCommunicationHandler ) {
         delete mCommunicationHandler;
     }
 }
 
-void Component::postMessage( uint8_t communicationType, Message *message )
+void Component::disableLoop()
 {
-    post( [ = ] {
-        handleMessageEvent( communicationType, message );
-    } );
+    if( mRunning ) {
+        std::cerr << "Cannot disable loop while running" << std::endl;
+    }
+
+    mLoopEnabled = false;
 }
+
 
 int Component::execute()
 {
@@ -62,11 +68,13 @@ int Component::execute()
 
     mRunning = true;
 
-    PeriodicTimer loop( mLoopInterval, [this] {
-        post( [this]{
-            handleLoopEvent();
+    if( mLoopEnabled ) {
+        mLoopTimer = new PeriodicTimer( mLoopInterval, [this] {
+            post( [this]{
+                handleLoopEvent();
+            } );
         } );
-    } );
+    }
 
     return EventLoop::execute();
 }
@@ -90,9 +98,22 @@ void Component::handleMessageEvent( uint8_t communicationType, Message *message 
     }
 }
 
+void Component::postMessage( uint8_t communicationType, Message *message )
+{
+    post( [ = ] {
+        handleMessageEvent( communicationType, message );
+    } );
+}
+
 void Component::exit()
 {
     mRunning = false;
+
+    if( mLoopTimer ) {
+        delete mLoopTimer;
+        mLoopTimer = 0;
+    }
+
     EventLoop::exit();
 }
 

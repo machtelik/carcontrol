@@ -10,7 +10,8 @@
 namespace ccm
 {
 
-CommunicationHandler::CommunicationHandler( int sourceId ):
+CommunicationHandler::CommunicationHandler( uint8_t sourceId ):
+    EventLoop(),
     mRunning( true ),
     mSourceId( sourceId ),
     mSendThread( 0 ),
@@ -22,16 +23,6 @@ CommunicationHandler::CommunicationHandler( int sourceId ):
 CommunicationHandler::~CommunicationHandler()
 {
     mRunning = false;
-
-    while( !mSendQueue.empty() ) {
-        mMessageManager->release( mSendQueue.front().second );
-        mSendQueue.pop();
-    }
-
-    while( !mReceiveQueue.empty() ) {
-        mMessageManager->release( mReceiveQueue.front().second );
-        mReceiveQueue.pop();
-    }
 
     for( int i = 0; i < mConnections.size(); ++i ) {
         delete mConnections.at( i );
@@ -54,27 +45,23 @@ MessageManager *CommunicationHandler::messages()
     return mMessageManager;
 }
 
-void CommunicationHandler::getReceivedMessages( std::queue< std::pair< uint8_t, ccm::Message * > > &messages )
+void CommunicationHandler::sendMessage( uint8_t communicationType, Message *message )
 {
-    std::lock_guard<std::mutex> lock( mReceiveQueueMutex );
-    while( !mReceiveQueue.empty() ) {
-        messages.push( mReceiveQueue.front() );
-        mReceiveQueue.pop();
-    }
-}
-
-void CommunicationHandler::sendMessage( int communicationType, Message *message )
-{
-    std::lock_guard<std::mutex> lock( mSendQueueMutex );
-    mSendQueue.push( std::pair<int, Message *>( communicationType, message ) );
-    mSendBarrier .notify_one();
+    post([=]{
+        handleSendEvent(communicationType, message);
+    });
 }
 
 bool CommunicationHandler::startCommunication()
 {
 
     mRunning = true;
-    mSendThread = new std::thread( &CommunicationHandler::sendThreadFunction, this );
+    
+    for(auto communication : mConnections) {
+        mReceiveThreads[communication.first] = new std::thread( &CommunicationHandler::receiveThreadFunction, this, communication.second );
+    }
+    
+    mSendThread = new std::thread( &CommunicationHandler::execute, this );
 
     return true;
 }
@@ -90,22 +77,24 @@ bool CommunicationHandler::addCommunicationMethod( Communication *communication 
     }
 
     mConnections[communication->communicationType()] = communication;
-    std::thread *multicastReceiveThread = new std::thread( &CommunicationHandler::receiveThreadFunction, this, communication->communicationType() );
-    mReceiveThreads[communication->communicationType()] = multicastReceiveThread;
 
     return true;
 }
 
-void CommunicationHandler::receiveThreadFunction( uint8_t deliveryType )
+void CommunicationHandler::setMessageCallback ( std::function< void(uint8_t, Message*) > callback )
 {
-    Communication *connection = mConnections[deliveryType];
+    mMessageCallback = callback;
+}
+
+void CommunicationHandler::receiveThreadFunction( Communication *communication )
+{
     Message *message = 0;
     while( mRunning ) {
         if( !message ) {
             message = messages()->getMessage();
         }
 
-        size_t dataSize = connection->receive( message->getData(), message->getMaxMessageSize() );
+        size_t dataSize = communication->receive( message->getData(), message->getMaxMessageSize() );
 
         if( dataSize != message->getMessageSize() ) {
             std::cerr << "Somethings wrong with the message size: " << dataSize << " != " << message->getMessageSize() << std::endl;
@@ -113,59 +102,30 @@ void CommunicationHandler::receiveThreadFunction( uint8_t deliveryType )
         }
 
         //Only handle foreign messages
-        if( mSourceId != message->getSourceId() ) {
-            std::lock_guard<std::mutex> lock( mReceiveQueueMutex );
-            mReceiveQueue.push( std::pair<uint8_t, Message *>( deliveryType, message ) );
+        if( mMessageCallback && mSourceId != message->getSourceId() ) {
+            mMessageCallback(communication->communicationType(), message);
             message = 0;
-
-            //If the buffer is too large recycle the oldest message while we have the lock
-            if( mReceiveQueue.size() >= MAX_MESSAGE_BUFFER_SIZE ) {
-                message = mReceiveQueue.front().second;
-                mReceiveQueue.pop();
-            }
         }
     }
 }
 
-void CommunicationHandler::sendThreadFunction()
+void CommunicationHandler::handleSendEvent(uint8_t communicationType, Message *message)
 {
-    std::queue< std::pair<int, Message *> > messageQueue;
-    while( mRunning ) {
-        {
-            std::unique_lock<std::mutex> lk( mSendQueueMutex );
-            mSendBarrier.wait( lk, [&]() {
-                return !CommunicationHandler::mSendQueue.empty();
-            } );
+    Communication *connection = mConnections[communicationType];
 
-            while( !mSendQueue.empty() ) {
-                messageQueue.push( mSendQueue.front() );
-                mSendQueue.pop();
-            }
-        }
+    message->setSourceId( mSourceId );
 
-        while( !messageQueue.empty() ) {
-            auto messageData = messageQueue.front();
-            messageQueue.pop();
-            Message *message = messageData.second;
-            Communication *connection = mConnections[messageData.first];
+    bool ok = true;
+    if( connection ) {
+        ok = connection->send( message->getData(), message->getMessageSize() );
+    } else {
+        std::cerr << "Did not find connection for delivery type: " << communicationType << ", is it enabled?" << std::endl;
+    }
 
-            message->setSourceId( mSourceId );
+    messages()->release( message );
 
-            bool ok = true;
-            if( connection ) {
-                ok = connection->send( message->getData(), message->getMessageSize() );
-            } else {
-                std::cerr << "Did not find connection for delivery type: " << messageData.first << ", is it enabled?" << std::endl;
-            }
-
-            messages()->release( message );
-
-            if( !ok ) {
-                std::cerr << "Could not send message" << std::endl;
-            }
-
-        }
-
+    if( !ok ) {
+        std::cerr << "Could not send message" << std::endl;
     }
 
 }

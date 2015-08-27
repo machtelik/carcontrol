@@ -2,12 +2,12 @@
 #define __COMMUNICATIONHANDLER_H__
 
 #include <stdint.h>
-#include <queue>
 #include <thread>
-#include <mutex>
-#include <condition_variable>
 #include <unordered_map>
 #include <utility>
+#include <functional>
+
+#include "eventloop/eventloop.h"
 
 namespace ccm
 {
@@ -16,45 +16,38 @@ class Message;
 class Communication;
 class MessageManager;
 
-class CommunicationHandler
+class CommunicationHandler : public EventLoop
 {
 
 public:
 
-    CommunicationHandler( int sourceId );
+    CommunicationHandler( uint8_t sourceId );
     virtual ~CommunicationHandler();
 
     bool startCommunication();
 
     bool addCommunicationMethod( Communication *communication );
-
-    void sendMessage( int communicationType, Message *message );
-
-    void getReceivedMessages( std::queue< std::pair<uint8_t, Message *> > &messages );
+    void setMessageCallback(std::function< void(uint8_t, Message*) > callback);
+    
+    void sendMessage( uint8_t communicationType, Message *message );
 
     MessageManager *messages();
 
 private:
 
-    void receiveThreadFunction( uint8_t deliveryType );
-    void sendThreadFunction();
+    void receiveThreadFunction( Communication *communication );
+    void handleSendEvent(uint8_t communicationType, Message *message);
 
     volatile bool mRunning;
 
-    int mSourceId;
+    uint8_t mSourceId;
+    
+    std::function< void(uint8_t, Message*) > mMessageCallback;
 
     std::thread *mSendThread;
 
     std::unordered_map<uint8_t, Communication *> mConnections;
     std::unordered_map<uint8_t, std::thread *> mReceiveThreads;
-
-    std::queue< std::pair<uint8_t, Message *> > mSendQueue;
-    std::queue< std::pair<uint8_t, Message *> > mReceiveQueue;
-
-    std::condition_variable mSendBarrier;
-
-    std::mutex mSendQueueMutex;
-    std::mutex mReceiveQueueMutex;
 
     MessageManager *mMessageManager;
 

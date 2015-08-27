@@ -4,6 +4,8 @@
 #include <mutex>
 #include <condition_variable>
 
+#include "eventloop/eventloop.h"
+
 namespace ccm
 {
 
@@ -12,7 +14,7 @@ class Communication;
 class Messageable;
 class CommunicationHandler;
 
-class Component
+class Component : public EventLoop
 {
 
 public:
@@ -24,6 +26,8 @@ public:
     void exit();
 
     uint8_t getId();
+    
+    void postMessage(uint8_t communicationType, Message *message);
 
 protected:
 
@@ -42,11 +46,8 @@ private:
 
     CommunicationHandler *mCommunicationHandler;
 
-    std::condition_variable mWaitBarrier;
-    std::mutex mWaitMutex;
-
-    void handleLoop();
-    bool handleReceivedMessages();
+    void handleLoopEvent();
+    void handleMessageEvent(uint8_t communicationType, Message *message);
 
 };
 

@@ -17,17 +17,28 @@ namespace ccm
 {
 
 Component::Component( int8_t id,  int argc, char **argv ) :
+    EventLoop(),
     mRunning( false ),
     mLoopInterval( DEFAULT_LOOP_DURATION ),
     mCommunicationHandler( new CommunicationHandler( id ) )
 {
+    mCommunicationHandler->setMessageCallback([this](uint8_t communicationType, Message *message){postMessage(communicationType, message);});
 }
 
 Component::~Component()
 {
     exit();
+    if( mCommunicationHandler ) {
+        delete mCommunicationHandler;
+    }
 }
 
+void Component::postMessage ( uint8_t communicationType, Message *message )
+{
+    post([=]{ 
+            handleMessageEvent(communicationType, message);
+        });
+}
 
 int Component::execute()
 {
@@ -49,60 +60,38 @@ int Component::execute()
 
     mRunning = true;
 
-    PeriodicTimer loop( mLoopInterval, [&]() {
-        Component::handleLoop();
+    PeriodicTimer loop( mLoopInterval, [this]{
+        post([this]{ 
+            handleLoopEvent();
+        });
     } );
 
-    std::unique_lock<std::mutex> lk( mWaitMutex );
-    mWaitBarrier.wait( lk, [&]() {
-        return mRunning;
-    } );
-
-    return EXIT_SUCCESS;
+    return EventLoop::execute();
 }
 
-void Component::handleLoop()
+void Component::handleLoopEvent()
 {
-    if( !handleReceivedMessages() ) {
+    if( !loop() ) {
+        std::cerr <<  "Error handeling loop" << std::endl;
+        exit();
+    }
+}
+
+void Component::handleMessageEvent(uint8_t communicationType, Message *message )
+{
+    bool handled = messageReceived( communicationType, message );
+    communication()->messages()->release( message );
+
+    if( !handled ) {
         std::cerr <<  "Error handeling message"   << std::endl;
         exit();
     }
-
-    if( !loop() ) {
-        std::cerr <<  "Error while execution loop"   << std::endl;
-        exit();
-    }
-}
-
-bool Component::handleReceivedMessages()
-{
-    std::queue< std::pair<uint8_t, Message *> > messageQueue;
-    communication()->getReceivedMessages( messageQueue );
-
-    while( !messageQueue.empty() ) {
-        auto messageData = messageQueue.front();
-        messageQueue.pop();
-        uint8_t communicationType = messageData.first;
-        Message *message = messageData.second;
-        bool handled = messageReceived( communicationType, message );
-        communication()->messages()->release( message );
-
-        if( !handled ) {
-            return false;
-        }
-    }
-
-    return true;
 }
 
 void Component::exit()
 {
     mRunning = false;
-    mWaitBarrier.notify_all();
-    if( mCommunicationHandler ) {
-        delete mCommunicationHandler;
-        mCommunicationHandler = 0;
-    }
+    EventLoop::exit();
 }
 
 uint8_t Component::getId()

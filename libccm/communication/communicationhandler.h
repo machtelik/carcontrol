@@ -27,8 +27,8 @@ public:
     bool startCommunication();
 
     bool addCommunicationMethod( Communication *communication );
-    void setMessageCallback(std::function< void(uint8_t, Message*) > callback);
-    
+    void setMessageCallback( std::function< void( uint8_t, Message * ) > callback );
+
     void sendMessage( uint8_t communicationType, Message *message );
 
     MessageManager *messages();
@@ -36,13 +36,13 @@ public:
 private:
 
     void receiveThreadFunction( Communication *communication );
-    void handleSendEvent(uint8_t communicationType, Message *message);
+    void handleSendEvent( uint8_t communicationType, Message *message );
 
     volatile bool mRunning;
 
     uint8_t mSourceId;
-    
-    std::function< void(uint8_t, Message*) > mMessageCallback;
+
+    std::function< void( uint8_t, Message * ) > mMessageCallback;
 
     std::thread *mSendThread;
 

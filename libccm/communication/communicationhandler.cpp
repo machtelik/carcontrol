@@ -47,20 +47,20 @@ MessageManager *CommunicationHandler::messages()
 
 void CommunicationHandler::sendMessage( uint8_t communicationType, Message *message )
 {
-    post([=]{
-        handleSendEvent(communicationType, message);
-    });
+    post( [ = ] {
+        handleSendEvent( communicationType, message );
+    } );
 }
 
 bool CommunicationHandler::startCommunication()
 {
 
     mRunning = true;
-    
-    for(auto communication : mConnections) {
+
+    for( auto communication : mConnections ) {
         mReceiveThreads[communication.first] = new std::thread( &CommunicationHandler::receiveThreadFunction, this, communication.second );
     }
-    
+
     mSendThread = new std::thread( &CommunicationHandler::execute, this );
 
     return true;
@@ -81,7 +81,7 @@ bool CommunicationHandler::addCommunicationMethod( Communication *communication 
     return true;
 }
 
-void CommunicationHandler::setMessageCallback ( std::function< void(uint8_t, Message*) > callback )
+void CommunicationHandler::setMessageCallback( std::function< void( uint8_t, Message * ) > callback )
 {
     mMessageCallback = callback;
 }
@@ -103,13 +103,13 @@ void CommunicationHandler::receiveThreadFunction( Communication *communication )
 
         //Only handle foreign messages
         if( mMessageCallback && mSourceId != message->getSourceId() ) {
-            mMessageCallback(communication->communicationType(), message);
+            mMessageCallback( communication->communicationType(), message );
             message = 0;
         }
     }
 }
 
-void CommunicationHandler::handleSendEvent(uint8_t communicationType, Message *message)
+void CommunicationHandler::handleSendEvent( uint8_t communicationType, Message *message )
 {
     Communication *connection = mConnections[communicationType];
 

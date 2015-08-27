@@ -22,7 +22,9 @@ Component::Component( int8_t id,  int argc, char **argv ) :
     mLoopInterval( DEFAULT_LOOP_DURATION ),
     mCommunicationHandler( new CommunicationHandler( id ) )
 {
-    mCommunicationHandler->setMessageCallback([this](uint8_t communicationType, Message *message){postMessage(communicationType, message);});
+    mCommunicationHandler->setMessageCallback( [this]( uint8_t communicationType, Message * message ) {
+        postMessage( communicationType, message );
+    } );
 }
 
 Component::~Component()
@@ -33,11 +35,11 @@ Component::~Component()
     }
 }
 
-void Component::postMessage ( uint8_t communicationType, Message *message )
+void Component::postMessage( uint8_t communicationType, Message *message )
 {
-    post([=]{ 
-            handleMessageEvent(communicationType, message);
-        });
+    post( [ = ] {
+        handleMessageEvent( communicationType, message );
+    } );
 }
 
 int Component::execute()
@@ -60,10 +62,10 @@ int Component::execute()
 
     mRunning = true;
 
-    PeriodicTimer loop( mLoopInterval, [this]{
-        post([this]{ 
+    PeriodicTimer loop( mLoopInterval, [this] {
+        post( [this]{
             handleLoopEvent();
-        });
+        } );
     } );
 
     return EventLoop::execute();
@@ -77,7 +79,7 @@ void Component::handleLoopEvent()
     }
 }
 
-void Component::handleMessageEvent(uint8_t communicationType, Message *message )
+void Component::handleMessageEvent( uint8_t communicationType, Message *message )
 {
     bool handled = messageReceived( communicationType, message );
     communication()->messages()->release( message );

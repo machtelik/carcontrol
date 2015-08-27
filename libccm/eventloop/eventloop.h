@@ -15,22 +15,22 @@ class EventLoop
 {
 
 public:
-    
+
     EventLoop();
     virtual ~EventLoop();
-    
+
     virtual int execute();
     virtual void exit();
-    
-    void post(std::function<void()> event);
-    
+
+    void post( std::function<void()> event );
+
 private:
-    
+
     volatile bool mRunning;
-    
+
     std::condition_variable mEventBarrier;
     std::mutex mEventMutex;
-    
+
     std::queue< std::function<void()> > mEventQueue;
 
 };

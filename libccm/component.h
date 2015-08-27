@@ -26,8 +26,8 @@ public:
     void exit();
 
     uint8_t getId();
-    
-    void postMessage(uint8_t communicationType, Message *message);
+
+    void postMessage( uint8_t communicationType, Message *message );
 
 protected:
 
@@ -47,7 +47,7 @@ private:
     CommunicationHandler *mCommunicationHandler;
 
     void handleLoopEvent();
-    void handleMessageEvent(uint8_t communicationType, Message *message);
+    void handleMessageEvent( uint8_t communicationType, Message *message );
 
 };
 

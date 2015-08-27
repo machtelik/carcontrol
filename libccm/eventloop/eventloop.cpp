@@ -2,10 +2,11 @@
 
 #include <iostream>
 
-namespace ccm {
-    
+namespace ccm
+{
+
 EventLoop::EventLoop() :
-mRunning(false)
+    mRunning( false )
 {
 
 }
@@ -15,16 +16,16 @@ EventLoop::~EventLoop()
 
 }
 
- 
+
 int EventLoop::execute()
 {
-    if(mRunning) {
+    if( mRunning ) {
         return EXIT_FAILURE;
     }
-    
+
     mRunning = true;
     std::queue< std::function<void()> > eventQueue;
-    
+
     while( mRunning ) {
         {
             std::unique_lock<std::mutex> lk( mEventMutex );
@@ -41,13 +42,13 @@ int EventLoop::execute()
         while( !eventQueue.empty() ) {
             auto event = eventQueue.front();
             eventQueue.pop();
-            
+
             event();
-            
+
         }
 
     }
-    
+
     return EXIT_SUCCESS;
 
 }
@@ -58,12 +59,12 @@ void EventLoop::exit()
     mEventBarrier.notify_one();
 }
 
-void EventLoop::post ( std::function<void()> event )
+void EventLoop::post( std::function<void()> event )
 {
     std::lock_guard<std::mutex> lock( mEventMutex );
     mEventQueue.push( event );
     mEventBarrier.notify_one();
 }
 
-    
+
 }

@@ -56,8 +56,8 @@ bool CarControlData::fromMessage( const Message *message )
     }
 
     mSpeed = message->getPayload() [0];
-    mSteering = message->getPayload() [1];
-    mMotorStatus = ( MotorStatus ) message->getPayload() [2];
+    mMotorStatus = ( MotorStatus ) message->getPayload() [1];
+    mSteering = message->getPayload() [2];
 
     return true;
 }
@@ -65,8 +65,8 @@ bool CarControlData::fromMessage( const Message *message )
 bool CarControlData::toMessage( Message *message ) const
 {
     message->getPayload() [0] = mSpeed;
-    message->getPayload() [1] = mSteering;
-    message->getPayload() [2] = mMotorStatus;
+    message->getPayload() [1] = mMotorStatus;
+    message->getPayload() [2] = mSteering;
     message->setPayloadSize( PAYLOAD_SIZE );
 
     return true;

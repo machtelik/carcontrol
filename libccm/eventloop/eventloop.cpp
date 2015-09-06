@@ -16,7 +16,6 @@ EventLoop::~EventLoop()
 
 }
 
-
 int EventLoop::execute()
 {
     if( mRunning ) {
@@ -65,6 +64,5 @@ void EventLoop::post( std::function<void()> event )
     mEventQueue.push( event );
     mEventBarrier.notify_one();
 }
-
 
 }

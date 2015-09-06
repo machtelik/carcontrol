@@ -38,15 +38,18 @@ Component::~Component()
     }
 }
 
-void Component::disableLoop()
+void Component::setLoopEnabled( bool enabled )
 {
     if( mRunning ) {
-        std::cerr << "Cannot disable loop while running" << std::endl;
+        std::cerr << "Cannot change loop while running" << std::endl;
     }
 
-    mLoopEnabled = false;
+    mLoopEnabled = enabled;
 }
 
+bool Component::loop()
+{
+}
 
 int Component::execute()
 {
@@ -79,6 +82,23 @@ int Component::execute()
     return EventLoop::execute();
 }
 
+void Component::exit()
+{
+    mRunning = false;
+
+    if( mLoopTimer ) {
+        delete mLoopTimer;
+        mLoopTimer = 0;
+    }
+
+    EventLoop::exit();
+}
+
+bool Component::sendMessage( Message *message )
+{
+    mCommunicationHandler->sendMessage( MulticastCommunication::TYPE, message );
+}
+
 void Component::handleLoopEvent()
 {
     if( !loop() ) {
@@ -103,18 +123,6 @@ void Component::postMessage( uint8_t communicationType, Message *message )
     post( [ = ] {
         handleMessageEvent( communicationType, message );
     } );
-}
-
-void Component::exit()
-{
-    mRunning = false;
-
-    if( mLoopTimer ) {
-        delete mLoopTimer;
-        mLoopTimer = 0;
-    }
-
-    EventLoop::exit();
 }
 
 uint8_t Component::getId()

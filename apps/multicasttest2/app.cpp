@@ -5,7 +5,6 @@
 #include <iostream>
 #include "communication/message/messagemanager.h"
 #include "communication/communicationhandler.h"
-#include "communication/types/multicastcommunication.h"
 
 App::App( int argc, char **argv ) :
     Component( 0, argc, argv )
@@ -25,7 +24,7 @@ bool App::loop()
     std::size_t length = str.copy( message->getPayload(), str.size() );
     message->getPayload() [length] = '\0';
     message->setPayloadSize( length + 1 );
-    communication()->sendMessage( ccm::MulticastCommunication::TYPE, message );
+    sendMessage( message );
 
     return true;
 }

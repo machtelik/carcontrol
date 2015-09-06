@@ -14,7 +14,6 @@ class MessageManager
 
 public:
     MessageManager();
-    MessageManager( int defaultSourceId );
     virtual ~MessageManager();
 
     Message *getMessage();
@@ -24,9 +23,6 @@ public:
 protected:
 
 private:
-
-    int mDefaultSourceId;
-
     std::stack<Message *> mMessageBuffer;
     std::mutex mMessageBufferMutex;
 

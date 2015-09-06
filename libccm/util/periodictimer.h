@@ -27,8 +27,8 @@ private:
     volatile bool mRunning;
     uint32_t mPeriod;
 
-    int timer_fd;
-    uint64_t wakeups_missed;
+    int mTimerDesc;
+    uint64_t mMissedWakeups;
 
     std::thread *mThread;
 

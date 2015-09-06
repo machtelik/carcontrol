@@ -36,16 +36,16 @@ void PeriodicTimer::run()
         waitPeriod();
     }
 
-    close( timer_fd );
+    close( mTimerDesc );
 }
 
 int PeriodicTimer::makePeriodic()
 {
     struct itimerspec itval;
 
-    timer_fd = timerfd_create( CLOCK_MONOTONIC, 0 );
-    wakeups_missed = 0;
-    if( timer_fd == -1 ) {
+    mTimerDesc = timerfd_create( CLOCK_MONOTONIC, 0 );
+    mMissedWakeups = 0;
+    if( mTimerDesc == -1 ) {
         return -1;
     }
 
@@ -55,21 +55,21 @@ int PeriodicTimer::makePeriodic()
     itval.it_interval.tv_nsec = ns;
     itval.it_value.tv_sec = sec;
     itval.it_value.tv_nsec = ns;
-    return timerfd_settime( timer_fd, 0, &itval, NULL );
+    return timerfd_settime( mTimerDesc, 0, &itval, NULL );
 }
 
 void PeriodicTimer::waitPeriod()
 {
     uint64_t missed;
 
-    int ret = read( timer_fd, &missed, sizeof( missed ) );
+    int ret = read( mTimerDesc, &missed, sizeof( missed ) );
     if( ret == -1 ) {
         std::cerr << "read timer" << std::endl;
         return;
     }
 
     if( missed > 0 ) {
-        wakeups_missed += ( missed - 1 );
+        mMissedWakeups += ( missed - 1 );
     }
 }
 

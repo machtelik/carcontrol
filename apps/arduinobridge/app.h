@@ -13,7 +13,6 @@ public:
 protected:
 
     virtual bool begin();
-    virtual bool loop();
     virtual bool messageReceived( uint8_t communicationType, const ccm::Message* message );
 
 private:

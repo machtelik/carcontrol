@@ -10,7 +10,7 @@
 #include "data/carcontroldata.h"
 
 static const char *SERIAL_PORT = "/dev/ttyACM0";
-static const uint32_t SERIAL_BAUD_RATE = 9600;
+static const uint32_t SERIAL_BAUD_RATE = 115200;
 
 App::App( int argc, char **argv ) :
     Component( 2, argc, argv )
@@ -20,16 +20,11 @@ App::App( int argc, char **argv ) :
 bool App::begin()
 {
     bool ok = true;
-    ok |= communication()->addCommunicationMethod( new ccm::SerialCommunication( SERIAL_PORT, SERIAL_BAUD_RATE ) );
+    ok &= communication()->addCommunicationMethod( new ccm::SerialCommunication( SERIAL_PORT, SERIAL_BAUD_RATE ) );
 
-    disableLoop();
+    setLoopEnabled(false);
     
     return ok;
-}
-
-bool App::loop()
-{
-    return true;
 }
 
 bool App::messageReceived( uint8_t communicationType, const ccm::Message *message )

@@ -16,7 +16,7 @@ class Message;
 class Communication;
 class MessageManager;
 
-class CommunicationHandler : public EventLoop
+class CommunicationHandler
 {
 
 public:
@@ -43,6 +43,8 @@ private:
     uint8_t mSourceId;
 
     std::function< void( uint8_t, Message * ) > mMessageCallback;
+
+    EventLoop *mEventLoop;
 
     std::thread *mSendThread;
 

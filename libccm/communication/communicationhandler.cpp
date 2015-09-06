@@ -11,11 +11,11 @@ namespace ccm
 {
 
 CommunicationHandler::CommunicationHandler( uint8_t sourceId ):
-    EventLoop(),
+    mEventLoop( new EventLoop() ),
     mRunning( true ),
     mSourceId( sourceId ),
     mSendThread( 0 ),
-    mMessageManager( new MessageManager( sourceId ) )
+    mMessageManager( new MessageManager() )
 {
 
 }
@@ -23,6 +23,8 @@ CommunicationHandler::CommunicationHandler( uint8_t sourceId ):
 CommunicationHandler::~CommunicationHandler()
 {
     mRunning = false;
+
+    delete mEventLoop;
 
     for( int i = 0; i < mConnections.size(); ++i ) {
         delete mConnections.at( i );
@@ -45,34 +47,32 @@ MessageManager *CommunicationHandler::messages()
     return mMessageManager;
 }
 
-void CommunicationHandler::sendMessage( uint8_t communicationType, Message *message )
-{
-    post( [ = ] {
-        handleSendEvent( communicationType, message );
-    } );
-}
-
 bool CommunicationHandler::startCommunication()
 {
 
     mRunning = true;
 
     for( auto communication : mConnections ) {
+        if( !communication.second->connect() ) {
+            return false;
+        }
         mReceiveThreads[communication.first] = new std::thread( &CommunicationHandler::receiveThreadFunction, this, communication.second );
     }
 
-    mSendThread = new std::thread( &CommunicationHandler::execute, this );
+    mSendThread = new std::thread( &EventLoop::execute, mEventLoop );
 
     return true;
 }
 
 bool CommunicationHandler::addCommunicationMethod( Communication *communication )
 {
-    if( mConnections.count( communication->communicationType() ) ) {
-        std::cerr << "Communication with given id already exists" << std::endl;
+    if( mRunning ) {
+        std::cerr << "Cannot add communication method while running" << std::endl;
+        return false;
     }
 
-    if( !communication->connect() ) {
+    if( mConnections.count( communication->communicationType() < 1 ) ) {
+        std::cerr << "Communication with given id already exists" << std::endl;
         return false;
     }
 
@@ -90,6 +90,7 @@ void CommunicationHandler::receiveThreadFunction( Communication *communication )
 {
     Message *message = 0;
     while( mRunning ) {
+
         if( !message ) {
             message = messages()->getMessage();
         }
@@ -106,7 +107,15 @@ void CommunicationHandler::receiveThreadFunction( Communication *communication )
             mMessageCallback( communication->communicationType(), message );
             message = 0;
         }
+
     }
+}
+
+void CommunicationHandler::sendMessage( uint8_t communicationType, Message *message )
+{
+    mEventLoop->post( [ = ] {
+        handleSendEvent( communicationType, message );
+    } );
 }
 
 void CommunicationHandler::handleSendEvent( uint8_t communicationType, Message *message )
@@ -115,19 +124,17 @@ void CommunicationHandler::handleSendEvent( uint8_t communicationType, Message *
 
     message->setSourceId( mSourceId );
 
-    bool ok = true;
-    if( connection ) {
-        ok = connection->send( message->getData(), message->getMessageSize() );
-    } else {
-        std::cerr << "Did not find connection for delivery type: " << communicationType << ", is it enabled?" << std::endl;
+    if( !connection ) {
+        std::cerr << "Did not find communication type: " << communicationType << ", is it enabled?" << std::endl;
+        messages()->release( message );
+        return;
     }
 
-    messages()->release( message );
-
-    if( !ok ) {
+    if( !connection->send( message->getData(), message->getMessageSize() ) ) {
         std::cerr << "Could not send message" << std::endl;
     }
 
+    messages()->release( message );
 }
 
 }

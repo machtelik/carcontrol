@@ -6,8 +6,7 @@
 namespace ccm
 {
 
-MessageManager::MessageManager( int defaultSourceId ) :
-    mDefaultSourceId( defaultSourceId )
+MessageManager::MessageManager()
 {
 }
 
@@ -36,7 +35,7 @@ Message *MessageManager::getMessage()
         message = new Message();
     }
 
-    message->setSourceId( mDefaultSourceId );
+    message->setSourceId( 0 );
     message->setPayloadSize( 0 );
 
     return message ;

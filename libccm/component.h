@@ -23,7 +23,6 @@ public:
     virtual ~Component();
 
     int execute();
-
     void exit();
 
     uint8_t getId();
@@ -31,11 +30,14 @@ public:
 protected:
 
     virtual bool begin() = 0;
-    virtual bool loop() = 0;
-    virtual bool messageReceived( uint8_t communicationType, const Message *message ) = 0;
+    virtual bool loop();
 
+    void setLoopEnabled( bool enabled );
+
+    virtual bool messageReceived( uint8_t communicationType, const Message *message ) = 0;
+    bool sendMessage( Message *message );
     CommunicationHandler *communication();
-    void disableLoop();
+
 
 private:
     volatile bool mRunning;

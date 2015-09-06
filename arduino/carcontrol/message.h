@@ -10,7 +10,7 @@ uint8_t getType(char *message);
 void setType( uint8_t type, char *message );
 
 uint8_t getSourceId(char *message);
-void setSourceId( uint8_t type, char *message );
+void setSourceId( uint8_t source, char *message );
 
 char *getPayload(char *message);
 

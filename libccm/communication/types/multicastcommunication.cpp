@@ -18,8 +18,12 @@ namespace ccm {
 
     MulticastCommunication::MulticastCommunication(const std::string &address, uint16_t port) :
             socketDesc(-1),
-            multicastAddress(getIPV6Adress(address)),
-            multicastPort(port) {
+            ipv6Address(),
+            socketAddress(),
+            port(port) {
+
+        inet_pton(AF_INET6, address.c_str(), &ipv6Address);
+        socketAddress = {AF_INET6, htons(port), 0, ipv6Address, 0};
     }
 
     MulticastCommunication::~MulticastCommunication() {
@@ -32,16 +36,38 @@ namespace ccm {
             return false;
         }
 
-        socketDesc = createSocket();
+        socketDesc = socket(PF_INET6, SOCK_DGRAM, 0);
 
         if (socketDesc == -1) {
             std::cerr << "Could not create socket" << std::endl;
             return false;
         }
 
-        multicastSocketAddress = getSocketAdress(multicastPort, multicastAddress);
+        int addr = 1;
+        if (setsockopt(socketDesc, SOL_SOCKET, SO_REUSEADDR, &addr, sizeof(addr)) < 0) {
+            std::cerr << "Error while setting SO_REUSEADDR" << std::endl;
+            return false;
+        }
 
-        return setupSocket(socketDesc, multicastPort, multicastAddress);
+        sockaddr_in6 bindAddress = { AF_INET6, htons(port), 0, in6addr_any, 0 };
+        if (bind(socketDesc, (struct sockaddr *) &bindAddress, sizeof(bindAddress)) < 0) {
+            std::cerr << "Could not bind socket" << std::endl;
+            return false;
+        }
+
+        int loop = 1;
+        if (setsockopt(socketDesc, IPPROTO_IPV6, IPV6_MULTICAST_LOOP, &loop, sizeof(loop)) < 0) {
+            std::cerr << "Error while setting IPV6_MULTICAST_LOOP" << std::endl;
+            return false;
+        }
+
+        ipv6_mreq group = { ipv6Address, 0 };
+        if (setsockopt(socketDesc, IPPROTO_IPV6, IPV6_ADD_MEMBERSHIP, &group, sizeof(group)) < 0) {
+            std::cerr << "Could not join group" << std::endl;
+            return false;
+        }
+
+        return true;
     }
 
     bool MulticastCommunication::disconnect() {
@@ -59,90 +85,13 @@ namespace ccm {
     }
 
     bool MulticastCommunication::sendMessage(const Message *message) {
-
-        if (sendto(socketDesc, message->message().data(), message->messageSize(), 0,
-                   (struct sockaddr *) &multicastSocketAddress, sizeof(multicastSocketAddress)) == -1) {
-            std::cerr << "Could not send data" << std::endl;
-            return false;
-        }
-
-        return true;
+        auto messageSize = sendto(socketDesc, message->message().data(), message->messageSize(), 0, (struct sockaddr *) &socketAddress, sizeof(socketAddress));
+        return messageSize != -1;
     }
 
-    void MulticastCommunication::receiveMessages() {
-        while (isConnected()) {
-            auto message = new Message();
-
-            sockaddr_in addr;
-            socklen_t addr_len = sizeof(addr);
-
-            auto messageSize = recvfrom(socketDesc, message->message().data(), message->maxMessageSize(), 0,
-                                        (struct sockaddr *) &addr, &addr_len);
-            if (messageSize != -1) {
-                messageReceived(message);
-            }
-        }
+    bool MulticastCommunication::receiveMessage(ccm::Message *message) {
+        auto messageSize = recvfrom(socketDesc, message->message().data(), message->maxMessageSize(), 0, nullptr, nullptr);
+        return messageSize != -1;
     }
-
-    int MulticastCommunication::createSocket() {
-        return socket(PF_INET6, SOCK_DGRAM, 0);
-    }
-
-    bool MulticastCommunication::setupSocket(int socketDesc, uint16_t port, in6_addr address) {
-        int addr = 1;
-        if (setsockopt(socketDesc, SOL_SOCKET, SO_REUSEADDR, &addr, sizeof(addr)) < 0) {
-            std::cerr << "Error while setting SO_REUSEADDR" << std::endl;
-            return false;
-        }
-
-        sockaddr_in6 sin = getSocketAdress(port);
-        if (bind(socketDesc, (struct sockaddr *) &sin, sizeof(sin)) < 0) {
-            std::cerr << "Could not bind socket" << std::endl;
-            return false;
-        }
-
-        int loop = 1;
-        if (setsockopt(socketDesc, IPPROTO_IPV6, IPV6_MULTICAST_LOOP, &loop, sizeof(loop)) < 0) {
-            std::cerr << "Error while setting IPV6_MULTICAST_LOOP" << std::endl;
-            return false;
-        }
-
-        ipv6_mreq group;
-        group.ipv6mr_multiaddr = address;
-        group.ipv6mr_interface = 0;
-
-        if (setsockopt(socketDesc, IPPROTO_IPV6, IPV6_ADD_MEMBERSHIP, &group, sizeof(group)) < 0) {
-            std::cerr << "Could not join group" << std::endl;
-            return false;
-        }
-
-        return true;
-    }
-
-    sockaddr_in6 MulticastCommunication::getSocketAdress(uint16_t port, in6_addr address) {
-        sockaddr_in6 sin;
-        memset(&sin, 0, sizeof(sin));
-        sin.sin6_family = AF_INET6;
-        sin.sin6_addr = address;
-        sin.sin6_port = htons(port);
-
-        return sin;
-    }
-
-    in6_addr MulticastCommunication::getIPV6Adress(const std::string &address) {
-        in6_addr ipv6Addr;
-        int s = inet_pton(AF_INET6, address.c_str(), &ipv6Addr);
-        if (s <= 0) {
-            if (s == 0) {
-                std::fprintf(stderr, "Not in presentation format: %s\n", address.c_str());
-            } else {
-                std::cerr << "inet_pton" << std::endl;
-            }
-            exit(EXIT_FAILURE);
-        }
-
-        return ipv6Addr;
-    }
-
 
 } // ccm

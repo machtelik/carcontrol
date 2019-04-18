@@ -11,7 +11,7 @@ namespace ccm {
     class SerialCommunication : public Communication {
 
     public:
-        SerialCommunication(const std::string &device, int baudRate);
+        SerialCommunication(std::string device, int baudRate);
         ~SerialCommunication() override;
 
     protected:
@@ -24,18 +24,13 @@ namespace ccm {
         bool disconnect() override;
 
         bool sendMessage(const Message *message) override;
-        void receiveMessages() override;
-
-        Message *readMessage();
-
-        static int createSocket(const std::string &device);
-        static bool setupSocket(int socketDesc, int speed, int parity);
+        bool receiveMessage(Message *message) override;
 
         char readChar();
         void writeChar(char data);
 
     private:
-        int socketDesc;
+        int ttySocket;
         std::string deviceName;
         int baudRate;
 

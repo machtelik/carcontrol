@@ -19,23 +19,19 @@ namespace ccm {
         explicit Communication();
         virtual ~Communication() = default;
 
-        bool start();
+        bool start(std::function<void(Message *)> callback);
         void stop();
 
         bool isConnected();
 
         void send(Message *message);
 
-        void setMessageCallback(std::function<void(const Message *)> callback);
-
     protected:
         virtual bool connect() = 0;
         virtual bool disconnect() = 0;
 
         virtual bool sendMessage(const Message *message) = 0;
-        virtual void receiveMessages() = 0;
-
-        void messageReceived(Message *message);
+        virtual bool receiveMessage(Message *message) = 0;
 
     private:
 
@@ -45,7 +41,9 @@ namespace ccm {
         std::unique_ptr<std::thread> eventThread;
         std::unique_ptr<std::thread> receiveThread;
 
-        std::function<void(const Message *)> messageCallback;
+        std::function<void(Message *)> messageCallback;
+
+        void receiveMessages();
 
     };
 

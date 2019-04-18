@@ -1,3 +1,5 @@
+#include <utility>
+
 #include "communication.h"
 #include <iostream>
 
@@ -11,7 +13,7 @@ namespace ccm {
 
     }
 
-    bool Communication::start() {
+    bool Communication::start(std::function<void(Message *)> callback) {
         if (connected) {
             std::cerr << "Communication is already connected" << std::endl;
             return false;
@@ -20,6 +22,8 @@ namespace ccm {
         if (!connect()) {
             return false;
         }
+
+        messageCallback = std::move(callback);
 
         eventThread = std::make_unique<std::thread>(new std::thread(&EventLoop::execute, eventLoop));
         receiveThread = std::make_unique<std::thread>(new std::thread(&Communication::receiveMessages));
@@ -56,19 +60,20 @@ namespace ccm {
         });
     }
 
-    void Communication::setMessageCallback(std::function<void(const Message *)> callback) {
-        messageCallback = callback;
-    }
+    void Communication::receiveMessages() {
+        while (connected) {
+            auto message = new Message();
 
-    void Communication::messageReceived(Message *message) {
-        eventLoop->post([this, message] {
-            if (messageCallback) {
-                messageCallback.operator()(message);
+            if (receiveMessage(message)) {
+                eventLoop->post([this, message] {
+                    if (messageCallback) {
+                        messageCallback.operator()(message);
+                    }
+                });
+            } else {
+                delete message;
             }
-
-            delete message;
-        });
+        }
     }
-
 
 }

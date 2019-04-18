@@ -1,3 +1,5 @@
+#include <utility>
+
 #include "serialcommunication.h"
 
 #include <termios.h>
@@ -19,9 +21,9 @@ namespace ccm {
     static const uint8_t MESSAGE_END_ESCAPED = 4;
     static const uint8_t MESSAGE_ESCAPE_ESCAPED = 5;
 
-    SerialCommunication::SerialCommunication(const std::string &device, int baudRate) :
-            socketDesc(-1),
-            deviceName(device),
+    SerialCommunication::SerialCommunication(std::string device, int baudRate) :
+            ttySocket(-1),
+            deviceName(std::move(device)),
             baudRate(baudRate) {
     }
 
@@ -30,35 +32,71 @@ namespace ccm {
     }
 
     bool SerialCommunication::connect() {
-        if (socketDesc != -1) {
+        if (ttySocket != -1) {
             std::cerr << "Already connected" << std::endl;
             return false;
         }
 
-        socketDesc = createSocket(deviceName);
-
-        if (socketDesc == -1) {
+        ttySocket = open(deviceName.c_str(), O_RDWR | O_NOCTTY | O_SYNC);
+        if (ttySocket == -1) {
             std::cerr << "Could not create socket" << std::endl;
             return false;
         }
 
-        setupSocket(socketDesc, baudRate, 0);
+        if(!isatty(ttySocket)) {
+            std::cerr << "Device is not a tty socket" << std::endl;
+            disconnect();
+            return false;
+        }
+
+        termios ttyConfig;
+        if (tcgetattr(ttySocket, &ttyConfig) == -1) {
+            std::cerr << "Could not get tty attributes" << std::endl;
+            disconnect();
+            return false;
+        }
+
+        ttyConfig.c_cflag &= ~PARENB;
+        ttyConfig.c_cflag &= ~CSTOPB;
+        ttyConfig.c_cflag &= ~CSIZE;
+        ttyConfig.c_cflag |= CS8;
+        ttyConfig.c_cflag &= ~CRTSCTS;
+        ttyConfig.c_cflag |= CREAD | CLOCAL;
+        ttyConfig.c_iflag &= ~(IXON | IXOFF | IXANY);
+        ttyConfig.c_lflag &= ~(ICANON | ECHO | ECHOE | ISIG);
+        ttyConfig.c_oflag &= ~OPOST;
+        ttyConfig.c_cc[VMIN] = 1;
+        ttyConfig.c_cc[VTIME] = 0;
+
+        if(cfsetospeed(&ttyConfig, baudRate) != 0 || cfsetispeed(&ttyConfig, baudRate) != 0) {
+            std::cerr << "Could not set baud raute" << std::endl;
+            disconnect();
+            return false;
+        }
+
+        if (tcsetattr(ttySocket, TCSANOW, &ttyConfig) != 0) {
+            std::cerr << "Could not set tty attributes" << std::endl;
+            disconnect();
+            return false;
+        }
+
+        return true;
     }
 
     bool SerialCommunication::disconnect() {
-        if (socketDesc == -1) {
+        if (ttySocket == -1) {
             return false;
         }
 
-        if (!close(socketDesc)) {
+        if (!close(ttySocket)) {
             return false;
         }
 
-        socketDesc = -1;
+        ttySocket = -1;
     }
 
     bool SerialCommunication::sendMessage(const Message *message) {
-        if (socketDesc == -1) {
+        if (ttySocket == -1) {
             std::cerr << "Not connected" << std::endl;
             return false;
         }
@@ -95,25 +133,9 @@ namespace ccm {
         return true;
     }
 
-    void SerialCommunication::receiveMessages() {
-        if (socketDesc == -1) {
-            std::cerr << "Not connected" << std::endl;
-            return;
-        }
-
-        while (isConnected()) {
-            auto message = readMessage();
-
-            if (message) {
-                messageReceived(message);
-            }
-        }
-    }
-
-    Message *SerialCommunication::readMessage() {
+    bool SerialCommunication::receiveMessage(Message *message)  {
         int readDataBytes = 0;
 
-        auto message = new Message();
         auto data = message->message();
 
         ReceiveState state = WAIT_FOR_START;
@@ -138,7 +160,7 @@ namespace ccm {
 
                 case MESSAGE_END:
                     if (state == READING_CHAR) {
-                        return message;
+                        return true;
                     } else {
                         state = WAIT_FOR_START;
                     }
@@ -182,58 +204,17 @@ namespace ccm {
             }
         }
 
-        return nullptr;
-    }
-
-    int SerialCommunication::createSocket(const std::string &device) {
-        int socketDesc = open(device.c_str(), O_RDWR | O_NOCTTY | O_SYNC);
-        if (socketDesc == -1) {
-            return -1;
-        }
-        return socketDesc;
-    }
-
-    bool SerialCommunication::setupSocket(int socketDesc, int speed, int parity) {
-        struct termios tty;
-        memset(&tty, 0, sizeof tty);
-        if (tcgetattr(socketDesc, &tty) != 0) {
-            std::cerr << "error from tcgetattr" << std::endl;
-            return false;
-        }
-
-        cfsetospeed(&tty, speed);
-        cfsetispeed(&tty, speed);
-
-        tty.c_cflag = (tty.c_cflag & ~CSIZE) | CS8;
-        tty.c_iflag &= ~IGNBRK;
-        tty.c_lflag = 0;
-        tty.c_oflag = 0;
-        tty.c_cc[VMIN] = 1;
-
-        tty.c_iflag &= ~(IXON | IXOFF | IXANY);
-
-        tty.c_cflag |= (CLOCAL | CREAD);
-        tty.c_cflag &= ~(PARENB | PARODD);
-        tty.c_cflag |= parity;
-        tty.c_cflag &= ~CSTOPB;
-        tty.c_cflag &= ~CRTSCTS;
-
-        if (tcsetattr(socketDesc, TCSANOW, &tty) != 0) {
-            std::cerr << "error from tcsetattr" << std::endl;
-            return false;
-        }
-
-        return true;
+        return false;
     }
 
     char SerialCommunication::readChar() {
         char data;
-        read(socketDesc, &data, 1);
+        read(ttySocket, &data, 1);
         return data;
     }
 
     void SerialCommunication::writeChar(char data) {
-        write(socketDesc, &data, 1);
+        write(ttySocket, &data, 1);
     }
 
 }

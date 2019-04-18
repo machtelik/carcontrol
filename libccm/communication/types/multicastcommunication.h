@@ -20,21 +20,14 @@ namespace ccm {
         bool disconnect() override;
 
         bool sendMessage(const Message *message) override;
-        void receiveMessages() override;
-
-        static int createSocket();
-        static bool setupSocket(int socketDesc, uint16_t port, in6_addr address);
-
-        static sockaddr_in6 getSocketAdress(uint16_t port, in6_addr address = in6addr_any);
-        static in6_addr getIPV6Adress(const std::string &address);
+        bool receiveMessage(Message *message) override;
 
     private:
-        int socketDesc;
+        int socketDesc = -1;
 
-        in6_addr multicastAddress;
-        uint16_t multicastPort;
-
-        sockaddr_in6 multicastSocketAddress;
+        in6_addr ipv6Address;
+        sockaddr_in6 socketAddress;
+        uint16_t port;
 
     };
 

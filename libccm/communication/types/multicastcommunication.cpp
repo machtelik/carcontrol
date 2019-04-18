@@ -89,7 +89,7 @@ namespace ccm {
         return messageSize != -1;
     }
 
-    bool MulticastCommunication::receiveMessage(ccm::Message *message) {
+    bool MulticastCommunication::receiveMessage(Message *message) {
         auto messageSize = recvfrom(socketDesc, message->message().data(), message->maxMessageSize(), 0, nullptr, nullptr);
         return messageSize != -1;
     }

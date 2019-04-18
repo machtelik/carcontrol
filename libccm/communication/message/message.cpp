@@ -6,7 +6,12 @@
 namespace ccm {
 
     Message::Message() : data(MESSAGE_MAX_SIZE) {
+        setPayloadSize(MESSAGE_MAX_SIZE - HEADER_SIZE);
+    }
 
+    Message::Message(uint8_t type, uint8_t payloadSize) : data(HEADER_SIZE + payloadSize) {
+        setType(type);
+        setPayloadSize(payloadSize);
     }
 
     uint8_t Message::type() const {
@@ -26,6 +31,10 @@ namespace ccm {
     }
 
     const char *Message::payload() const {
+        return &data[HEADER_SIZE];
+    }
+
+    char *Message::payload() {
         return &data[HEADER_SIZE];
     }
 

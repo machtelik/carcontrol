@@ -3,18 +3,18 @@
 
 #include <component.h>
 
-class App : public ccm::Component
-{
+class App : public ccm::Component {
 
 public:
 
-    App( int argc, char **argv );
+    App(int argc, char **argv);
 
 protected:
 
-    virtual bool begin();
-    virtual bool loop();
-    virtual bool messageReceived( uint8_t communicationType, const ccm::Message* message );
+    bool begin() override;
+    void loop() override;
+
+    bool onMessageReceived(ccm::Message *message) override;
 
 private:
 

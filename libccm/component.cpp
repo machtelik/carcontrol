@@ -37,8 +37,9 @@ namespace ccm {
 
         communication->start([this](Message *message) {
             post([this, message] {
-                onMessageReceived(message);
-                delete message;
+                if (!onMessageReceived(message)) {
+                    delete message;
+                }
             });
         });
 

@@ -3,34 +3,26 @@
 #include <communication/message/message.h>
 
 #include <iostream>
-#include "communication/message/messagemanager.h"
-#include "communication/communicationhandler.h"
 
-App::App( int argc, char **argv ) :
-    Component( 0, argc, argv )
-{
+App::App(int argc, char **argv) :
+        Component(argc, argv) {
 }
 
-bool App::begin()
-{
+bool App::begin() {
     return true;
 }
 
-bool App::loop()
-{
+void App::loop() {
 
-    ccm:: Message *message =  communication()->messages()->getMessage();
-    std::string str( "Message" );
-    std::size_t length = str.copy( message->getPayload(), str.size() );
-    message->getPayload() [length] = '\0';
-    message->setPayloadSize( length + 1 );
-    sendMessage( message );
+    std::string str("World!");
+    auto message = new ccm::Message(1, str.size() + 1);
+    std::size_t length = str.copy(message->payload(), str.size());
+    message->payload()[length] = '\0';
 
-    return true;
+    sendMessage(message);
 }
 
-bool App::messageReceived( uint8_t communicationType, const ccm::Message *message )
-{
-    std::cout << "Got: " << message->getPayload() << std::endl;
-    return true;
+bool App::onMessageReceived(ccm::Message *message) {
+    std::cout << "Got: " << message->payload() << std::endl;
+    return false;
 }

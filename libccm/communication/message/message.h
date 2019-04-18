@@ -9,7 +9,7 @@ namespace ccm {
 
     public:
         explicit Message();
-
+        explicit Message(uint8_t type, uint8_t payloadSize);
         virtual ~Message() = default;
 
         uint8_t type() const;
@@ -19,6 +19,7 @@ namespace ccm {
         void setPayloadSize(uint8_t size);
 
         const char *payload() const;
+        char *payload();
 
         uint8_t headerSize() const;
 

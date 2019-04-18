@@ -4,12 +4,10 @@
 #include <memory>
 
 #include "eventloop/eventloop.h"
+#include "communication/message/message.h"
+#include "communication/communication.h"
 
 namespace ccm {
-
-    class Message;
-
-    class Communication;
 
     class PeriodicTimer;
 
@@ -30,7 +28,7 @@ namespace ccm {
         virtual bool begin() = 0;
         virtual void loop() = 0;
 
-        virtual bool onMessageReceived(const Message *message) = 0;
+        virtual bool onMessageReceived(Message *message) = 0;
 
     private:
 

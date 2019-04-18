@@ -28,7 +28,6 @@ namespace ccm {
         }
 
         return EXIT_SUCCESS;
-
     }
 
     void EventLoop::exit() {

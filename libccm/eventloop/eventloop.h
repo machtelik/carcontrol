@@ -1,5 +1,5 @@
-#ifndef __EVENTLOOP_H__
-#define __EVENTLOOP_H__
+#ifndef __CCM_EVENTLOOP_H__
+#define __CCM_EVENTLOOP_H__
 
 #include <stdint.h>
 #include <queue>
@@ -16,10 +16,10 @@ namespace ccm {
         explicit EventLoop() = default;
         virtual ~EventLoop() = default;
 
-        virtual int execute();
-        virtual void exit();
+        int execute();
+        void exit();
 
-        virtual void post(std::function<void()> event);
+        void post(std::function<void()> event);
 
     private:
 
@@ -34,5 +34,5 @@ namespace ccm {
 
 } // ccm
 
-#endif /* __EVENTLOOP_H__ */
+#endif /* __CCM_EVENTLOOP_H__ */
 

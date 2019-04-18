@@ -1,48 +1,42 @@
-#ifndef __MESSSAGE_H__
-#define __MESSSAGE_H__
+#ifndef CCM_MESSAGE_H
+#define CCM_MESSAGE_H
 
-#include <stddef.h>
 #include <stdint.h>
+#include <vector>
 
-namespace ccm
-{
+namespace ccm {
+    class Message {
 
-class Message
-{
+    public:
+        explicit Message();
 
-public:
-    Message();
-    virtual ~Message();
+        virtual ~Message() = default;
 
-    Message &operator=( const Message &other );
+        uint8_t type() const;
+        void setType(uint8_t type);
 
-    uint8_t getType() const;
-    void setType( uint8_t type );
+        uint8_t payloadSize() const;
+        void setPayloadSize(uint8_t size);
 
-    uint8_t getSourceId() const;
-    void setSourceId( uint8_t source );
+        const char *payload() const;
 
-    char *getPayload();
-    const char *getPayload() const;
+        uint8_t headerSize() const;
 
-    void setPayloadSize( uint16_t size );
-    uint16_t getPayloadSize() const;
-    static uint16_t getMaxPayloadSize();
+        uint8_t messageSize() const;
+        uint8_t maxMessageSize() const;
 
-    uint16_t getMessageSize() const;
-    static uint16_t getMaxMessageSize();
+        const std::vector<char> &message() const;
+        std::vector<char> &message();
 
-    char *getData();
-    const char *getData() const;
+    private:
+        static const uint8_t HEADER_SIZE = 2;
+        static const uint8_t HEADER_MESSAGE_TYPE_POS = 0;
+        static const uint8_t HEADER_MESSAGE_PAYLOAD_SIZE_POS = 1;
 
-protected:
+        std::vector<char> data;
 
-private:
-    char *mData;
+    };
 
-};
+}
 
-} // ccm
-
-#endif /* __MESSSAGE_H__ */
-
+#endif //CCM_MESSAGE_H

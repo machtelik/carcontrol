@@ -1,48 +1,45 @@
-#ifndef __MULTICASTCOMMUNICATION_H__
-#define __MULTICASTCOMMUNICATION_H__
+#ifndef __CCM_MULTICASTCOMMUNICATION_H__
+#define __CCM_MULTICASTCOMMUNICATION_H__
 
 #include <netinet/in.h>
 #include <string>
 
 #include "communication/communication.h"
 
-namespace ccm
-{
+namespace ccm {
 
-class MulticastCommunication : public Communication
-{
+    class MulticastCommunication : public Communication {
 
-public:
-    static const uint8_t TYPE = 0;
+    public:
+        MulticastCommunication(const std::string &address, uint16_t port);
+        ~MulticastCommunication() override;
 
-    MulticastCommunication( const std::string &address, uint16_t port );
-    virtual ~MulticastCommunication();
+    protected:
 
-    bool connect();
-    bool disconnect();
+        bool connect() override;
+        bool disconnect() override;
 
-    bool send( const char *data, uint16_t length );
-    uint16_t receive( char *data, uint16_t maxLength );
+        bool sendMessage(const Message *message) override;
+        void receiveMessages() override;
 
-    static sockaddr_in6 getSocketAdress( uint16_t port, in6_addr address = in6addr_any );
-    static in6_addr getIPV6Adress( const std::string &address );
-protected:
+        static int createSocket();
+        static bool setupSocket(int socketDesc, uint16_t port, in6_addr address);
 
-    static int createSocket();
-    static bool setupSocket( int socketDesc, uint16_t port, in6_addr address );
+        static sockaddr_in6 getSocketAdress(uint16_t port, in6_addr address = in6addr_any);
+        static in6_addr getIPV6Adress(const std::string &address);
 
-private:
-    int mSocketDesc;
+    private:
+        int socketDesc;
 
-    in6_addr mAddress;
-    uint16_t mPort;
+        in6_addr multicastAddress;
+        uint16_t multicastPort;
 
-    sockaddr_in6 mMulticastAddr;
+        sockaddr_in6 multicastSocketAddress;
 
-};
+    };
 
 } // ccm
 
-#endif /* __MULTICASTCOMMUNICATION_H__ */
+#endif /* __CCM_MULTICASTCOMMUNICATION_H__ */
 
 

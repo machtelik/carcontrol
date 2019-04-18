@@ -1,48 +1,48 @@
-#ifndef __SERIALCOMMUNICATION_H__
-#define __SERIALCOMMUNICATION_H__
+#ifndef __CCM_SERIALCOMMUNICATION_H__
+#define __CCM_SERIALCOMMUNICATION_H__
 
 #include <netinet/in.h>
 #include <string>
 
 #include "communication/communication.h"
 
-namespace ccm
-{
+namespace ccm {
 
-class SerialCommunication : public Communication
-{
+    class SerialCommunication : public Communication {
 
-public:
-    static const uint8_t TYPE = 1;
+    public:
+        SerialCommunication(const std::string &device, int baudRate);
+        ~SerialCommunication() override;
 
-    SerialCommunication( const std::string &device, int baudRate );
-    virtual ~SerialCommunication();
+    protected:
 
-    bool connect();
-    bool disconnect();
+        enum ReceiveState {
+            WAIT_FOR_START = 0, READING_CHAR = 1, READING_ESCAPE = 2
+        };
 
-    bool send( const char *data, uint16_t length );
-    uint16_t receive( char *data, uint16_t maxLength );
+        bool connect() override;
+        bool disconnect() override;
 
-protected:
+        bool sendMessage(const Message *message) override;
+        void receiveMessages() override;
 
-    enum ReceiveState {WAIT_FOR_START = 0, READING_CHAR = 1, READING_ESCAPE = 2};
+        Message *readMessage();
 
-    static int createSocket( const std::string &device );
-    static bool setupSocket( int socketDesc, int speed, int parity );
+        static int createSocket(const std::string &device);
+        static bool setupSocket(int socketDesc, int speed, int parity);
 
-    char readChar();
-    void writeChar( char data );
+        char readChar();
+        void writeChar(char data);
 
-private:
-    int mSocketDesc;
-    std::string mDevice;
-    int mBaudRate;
+    private:
+        int socketDesc;
+        std::string deviceName;
+        int baudRate;
 
-};
+    };
 
 } // ccm
 
-#endif /* __SERIALCOMMUNICATION_H__ */
+#endif /* __CCM_SERIALCOMMUNICATION_H__ */
 
 

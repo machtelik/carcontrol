@@ -9,8 +9,6 @@
 #include "config.h"
 #include "communication/message/message.h"
 #include "communication/types/multicastcommunication.h"
-#include "communication/communicationhandler.h"
-#include "communication/message/messagemanager.h"
 #include "util/periodictimer.h"
 
 namespace ccm
@@ -21,8 +19,7 @@ Component::Component( int8_t id,  int argc, char **argv ) :
     mRunning( false ),
     mLoopTimer( 0 ),
     mLoopEnabled( true ),
-    mLoopInterval( DEFAULT_LOOP_DURATION ),
-    mCommunicationHandler( new CommunicationHandler( id ) )
+    mLoopInterval( DEFAULT_LOOP_DURATION )
 {
     mCommunicationHandler->setMessageCallback( [this]( uint8_t communicationType, Message * message ) {
         postMessage( communicationType, message );

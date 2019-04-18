@@ -5,35 +5,32 @@
 #include <queue>
 #include <mutex>
 #include <condition_variable>
-#include <unordered_map>
 #include <functional>
 
-namespace ccm
-{
+namespace ccm {
 
-class EventLoop
-{
+    class EventLoop {
 
-public:
+    public:
 
-    EventLoop();
-    virtual ~EventLoop();
+        explicit EventLoop() = default;
+        virtual ~EventLoop() = default;
 
-    virtual int execute();
-    virtual void exit();
+        virtual int execute();
+        virtual void exit();
 
-    void post( std::function<void()> event );
+        virtual void post(std::function<void()> event);
 
-private:
+    private:
 
-    volatile bool mRunning;
+        volatile bool isRunning = false;
 
-    std::condition_variable mEventBarrier;
-    std::mutex mEventMutex;
+        std::condition_variable eventBarrier;
+        std::mutex eventMutex;
 
-    std::queue< std::function<void()> > mEventQueue;
+        std::queue<std::function<void()> > eventQueue;
 
-};
+    };
 
 } // ccm
 

@@ -1,34 +1,56 @@
-#ifndef __COMMUNICATION_H__
-#define __COMMUNICATION_H__
+#ifndef __CCM_COMMUNICATION_H__
+#define __CCM_COMMUNICATION_H__
 
 #include <stdint.h>
+#include <functional>
+#include <memory>
+#include <thread>
 
-namespace ccm
-{
+namespace ccm {
 
-class Communication
-{
+    class Message;
 
-public:
+    class EventLoop;
 
-    Communication( uint8_t communicationType );
+    class Communication {
 
-    virtual bool connect() = 0;
-    virtual bool disconnect() = 0;
+    public:
 
-    virtual bool send( const char *data, uint16_t length ) = 0;
-    virtual uint16_t receive( char *data, uint16_t maxLength ) = 0;
+        explicit Communication();
+        virtual ~Communication() = default;
 
-    uint8_t communicationType();
+        bool start();
+        void stop();
 
-private:
+        bool isConnected();
 
-    uint8_t mCommunicationType;
+        void send(Message *message);
 
-};
+        void setMessageCallback(std::function<void(const Message *)> callback);
+
+    protected:
+        virtual bool connect() = 0;
+        virtual bool disconnect() = 0;
+
+        virtual bool sendMessage(const Message *message) = 0;
+        virtual void receiveMessages() = 0;
+
+        void messageReceived(Message *message);
+
+    private:
+
+        volatile bool connected = false;
+
+        std::unique_ptr<EventLoop> eventLoop;
+        std::unique_ptr<std::thread> eventThread;
+        std::unique_ptr<std::thread> receiveThread;
+
+        std::function<void(const Message *)> messageCallback;
+
+    };
 
 } // ccm
 
-#endif /* __COMMUNICATION_H__ */
+#endif /* __CCM_COMMUNICATION_H__ */
 
 

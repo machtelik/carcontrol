@@ -1,8 +1,8 @@
 #ifndef _CONFIG_H_
 #define _CONFIG_H_
 
-static const uint16_t MESSAGE_HEADER_SIZE = 4; //bytes
-static const uint16_t MESSAGE_MAX_SIZE = 512; //bytes
+static const uint8_t MESSAGE_HEADER_SIZE = 2; //bytes
+static const uint8_t MESSAGE_MAX_SIZE = 128; //bytes
 
 static const uint8_t MAX_MESSAGE_BUFFER_SIZE = 64; //messages
 

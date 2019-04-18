@@ -7,233 +7,233 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "../message/message.h"
 #include "config.h"
 
-namespace ccm
-{
+namespace ccm {
 
-static const uint8_t MESSAGE_START = 0;
-static const uint8_t MESSAGE_END = 1;
-static const uint8_t MESSAGE_ESCAPE = 2;
-static const uint8_t MESSAGE_START_ESCAPED = 3;
-static const uint8_t MESSAGE_END_ESCAPED = 4;
-static const uint8_t MESSAGE_ESCAPE_ESCAPED = 5;
+    static const uint8_t MESSAGE_START = 0;
+    static const uint8_t MESSAGE_END = 1;
+    static const uint8_t MESSAGE_ESCAPE = 2;
+    static const uint8_t MESSAGE_START_ESCAPED = 3;
+    static const uint8_t MESSAGE_END_ESCAPED = 4;
+    static const uint8_t MESSAGE_ESCAPE_ESCAPED = 5;
 
-SerialCommunication::SerialCommunication( const std::string &device, int baudRate ) :
-    Communication( TYPE ),
-    mSocketDesc( -1 ),
-    mDevice( device ),
-    mBaudRate( baudRate )
-{
-}
-
-SerialCommunication::~SerialCommunication()
-{
-    disconnect();
-}
-
-bool SerialCommunication::connect()
-{
-    if( mSocketDesc != -1 ) {
-        std::cerr << "Already connected"  << std::endl;
-        return false;
+    SerialCommunication::SerialCommunication(const std::string &device, int baudRate) :
+            socketDesc(-1),
+            deviceName(device),
+            baudRate(baudRate) {
     }
 
-    mSocketDesc = createSocket( mDevice );
-
-    if( mSocketDesc == -1 ) {
-        std::cerr << "Could not create socket"  << std::endl;
-        return false;
+    SerialCommunication::~SerialCommunication() {
+        disconnect();
     }
 
-    setupSocket( mSocketDesc, mBaudRate, 0 );
-}
+    bool SerialCommunication::connect() {
+        if (socketDesc != -1) {
+            std::cerr << "Already connected" << std::endl;
+            return false;
+        }
 
-bool SerialCommunication::disconnect()
-{
-    if( mSocketDesc == -1 ) {
-        return false;
+        socketDesc = createSocket(deviceName);
+
+        if (socketDesc == -1) {
+            std::cerr << "Could not create socket" << std::endl;
+            return false;
+        }
+
+        setupSocket(socketDesc, baudRate, 0);
     }
 
-    if( !close( mSocketDesc ) ) {
-        return false;
+    bool SerialCommunication::disconnect() {
+        if (socketDesc == -1) {
+            return false;
+        }
+
+        if (!close(socketDesc)) {
+            return false;
+        }
+
+        socketDesc = -1;
     }
 
-    mSocketDesc = -1;
-}
+    bool SerialCommunication::sendMessage(const Message *message) {
+        if (socketDesc == -1) {
+            std::cerr << "Not connected" << std::endl;
+            return false;
+        }
 
-int SerialCommunication::createSocket( const std::string &device )
-{
-    int socketDesc = open( device.c_str(), O_RDWR | O_NOCTTY | O_SYNC );
-    if( socketDesc == -1 ) {
-        return -1;
+        writeChar(MESSAGE_START);
+
+        auto data = message->message();
+
+        for (int i = 0; i < message->messageSize(); ++i) {
+            switch (data[i]) {
+                case MESSAGE_START:
+                    writeChar(MESSAGE_ESCAPE);
+                    writeChar(MESSAGE_START_ESCAPED);
+                    break;
+
+                case MESSAGE_END:
+                    writeChar(MESSAGE_ESCAPE);
+                    writeChar(MESSAGE_END_ESCAPED);
+                    break;
+
+                case MESSAGE_ESCAPE:
+                    writeChar(MESSAGE_ESCAPE);
+                    writeChar(MESSAGE_ESCAPE_ESCAPED);
+                    break;
+
+                default:
+                    writeChar(data[i]);
+                    break;
+            }
+        }
+
+        writeChar(MESSAGE_END);
+
+        return true;
     }
-    return socketDesc;
-}
 
-bool SerialCommunication::send( const char *data, uint16_t length )
-{
-    if( length > MESSAGE_MAX_SIZE ) {
-        std::cerr << "Message size to large"  << std::endl;
-    }
+    void SerialCommunication::receiveMessages() {
+        if (socketDesc == -1) {
+            std::cerr << "Not connected" << std::endl;
+            return;
+        }
 
-    if( mSocketDesc == -1 ) {
-        std::cerr << "Not connected"  << std::endl;
-        return false;
-    }
+        while (isConnected()) {
+            auto message = readMessage();
 
-    writeChar( MESSAGE_START );
-
-    for( int i = 0; i < length; ++i ) {
-        switch( data[i] ) {
-        case MESSAGE_START:
-            writeChar( MESSAGE_ESCAPE );
-            writeChar( MESSAGE_START_ESCAPED );
-            break;
-
-        case MESSAGE_END:
-            writeChar( MESSAGE_ESCAPE );
-            writeChar( MESSAGE_END_ESCAPED );
-            break;
-
-        case MESSAGE_ESCAPE:
-            writeChar( MESSAGE_ESCAPE );
-            writeChar( MESSAGE_ESCAPE_ESCAPED );
-            break;
-
-        default:
-            writeChar( data[i] );
-            break;
+            if (message) {
+                messageReceived(message);
+            }
         }
     }
 
-    writeChar( MESSAGE_END );
+    Message *SerialCommunication::readMessage() {
+        int readDataBytes = 0;
 
-    return true;
-}
+        auto message = new Message();
+        auto data = message->message();
 
-uint16_t SerialCommunication::receive( char *data, uint16_t maxLength )
-{
-    if( mSocketDesc == -1 ) {
-        std::cerr << "Not connected"  << std::endl;
-        return -1;
-    }
+        ReceiveState state = WAIT_FOR_START;
 
-    int readDataBytes = 0;
+        //Try to read a complete message
+        while (readDataBytes < message->maxMessageSize()) {
+            char readData = readChar();
 
-    ReceiveState state = WAIT_FOR_START;
+            switch (readData) {
+                case MESSAGE_START:
+                    readDataBytes = 0;
+                    state = READING_CHAR;
+                    break;
 
-    //Try to read a complete message
-    while( readDataBytes < maxLength ) {
-        char readData = readChar();
+                case MESSAGE_ESCAPE:
+                    if (state == READING_CHAR) {
+                        state = READING_ESCAPE;
+                    } else {
+                        state = WAIT_FOR_START;
+                    }
+                    break;
 
-        switch( readData ) {
-        case MESSAGE_START:
-            readDataBytes = 0;
-            state = READING_CHAR;
-            break;
+                case MESSAGE_END:
+                    if (state == READING_CHAR) {
+                        return message;
+                    } else {
+                        state = WAIT_FOR_START;
+                    }
+                    break;
 
-        case MESSAGE_ESCAPE:
-            if( state == READING_CHAR ) {
-                state = READING_ESCAPE;
-            } else {
-                state = WAIT_FOR_START;
+                case MESSAGE_START_ESCAPED:
+                    if (state == READING_ESCAPE) {
+                        data[readDataBytes++] = MESSAGE_START;
+                        state = READING_CHAR;
+                    } else {
+                        state = WAIT_FOR_START;
+                    }
+                    break;
+
+                case MESSAGE_ESCAPE_ESCAPED:
+                    if (state == READING_ESCAPE) {
+                        data[readDataBytes++] = MESSAGE_ESCAPE;
+                        state = READING_CHAR;
+                    } else {
+                        state = WAIT_FOR_START;
+                    }
+                    break;
+
+                case MESSAGE_END_ESCAPED:
+                    if (state == READING_ESCAPE) {
+                        data[readDataBytes++] = MESSAGE_END;
+                        state = READING_CHAR;
+                    } else {
+                        state = WAIT_FOR_START;
+                    }
+                    break;
+
+
+                default:
+                    if (state == READING_CHAR) {
+                        data[readDataBytes++] = readData;
+                    } else {
+                        state = WAIT_FOR_START;
+                    }
+                    break;
             }
-            break;
-
-        case MESSAGE_END:
-            if( state == READING_CHAR ) {
-                return readDataBytes;
-            } else {
-                state = WAIT_FOR_START;
-            }
-            break;
-
-        case MESSAGE_START_ESCAPED:
-            if( state == READING_ESCAPE ) {
-                data[readDataBytes++] = MESSAGE_START;
-                state = READING_CHAR;
-            } else {
-                state = WAIT_FOR_START;
-            }
-            break;
-
-        case MESSAGE_ESCAPE_ESCAPED:
-            if( state == READING_ESCAPE ) {
-                data[readDataBytes++] = MESSAGE_ESCAPE;
-                state = READING_CHAR;
-            } else {
-                state = WAIT_FOR_START;
-            }
-            break;
-
-        case MESSAGE_END_ESCAPED:
-            if( state == READING_ESCAPE ) {
-                data[readDataBytes++] = MESSAGE_END;
-                state = READING_CHAR;
-            } else {
-                state = WAIT_FOR_START;
-            }
-            break;
-
-
-        default:
-            if( state == READING_CHAR ) {
-                data[readDataBytes++] = readData;
-            } else {
-                state = WAIT_FOR_START;
-            }
-            break;
         }
+
+        return nullptr;
     }
 
-    return -1;
-}
-
-char SerialCommunication::readChar()
-{
-    char data;
-    read( mSocketDesc, &data, 1 );
-    return data;
-}
-
-void SerialCommunication::writeChar( char data )
-{
-    write( mSocketDesc, &data, 1 );
-}
-
-bool SerialCommunication::setupSocket( int socketDesc, int speed, int parity )
-{
-    struct termios tty;
-    memset( &tty, 0, sizeof tty );
-    if( tcgetattr( socketDesc, &tty ) != 0 ) {
-        std::cerr << "error from tcgetattr" << std::endl;
-        return false;
+    int SerialCommunication::createSocket(const std::string &device) {
+        int socketDesc = open(device.c_str(), O_RDWR | O_NOCTTY | O_SYNC);
+        if (socketDesc == -1) {
+            return -1;
+        }
+        return socketDesc;
     }
 
-    cfsetospeed( &tty, speed );
-    cfsetispeed( &tty, speed );
+    bool SerialCommunication::setupSocket(int socketDesc, int speed, int parity) {
+        struct termios tty;
+        memset(&tty, 0, sizeof tty);
+        if (tcgetattr(socketDesc, &tty) != 0) {
+            std::cerr << "error from tcgetattr" << std::endl;
+            return false;
+        }
 
-    tty.c_cflag = ( tty.c_cflag & ~CSIZE ) | CS8;
-    tty.c_iflag &= ~IGNBRK;
-    tty.c_lflag = 0;
-    tty.c_oflag = 0;
-    tty.c_cc[VMIN]  = 1;
+        cfsetospeed(&tty, speed);
+        cfsetispeed(&tty, speed);
 
-    tty.c_iflag &= ~( IXON | IXOFF | IXANY );
+        tty.c_cflag = (tty.c_cflag & ~CSIZE) | CS8;
+        tty.c_iflag &= ~IGNBRK;
+        tty.c_lflag = 0;
+        tty.c_oflag = 0;
+        tty.c_cc[VMIN] = 1;
 
-    tty.c_cflag |= ( CLOCAL | CREAD );
-    tty.c_cflag &= ~( PARENB | PARODD );
-    tty.c_cflag |= parity;
-    tty.c_cflag &= ~CSTOPB;
-    tty.c_cflag &= ~CRTSCTS;
+        tty.c_iflag &= ~(IXON | IXOFF | IXANY);
 
-    if( tcsetattr( socketDesc, TCSANOW, &tty ) != 0 ) {
-        std::cerr << "error from tcsetattr" << std::endl;
-        return false;
+        tty.c_cflag |= (CLOCAL | CREAD);
+        tty.c_cflag &= ~(PARENB | PARODD);
+        tty.c_cflag |= parity;
+        tty.c_cflag &= ~CSTOPB;
+        tty.c_cflag &= ~CRTSCTS;
+
+        if (tcsetattr(socketDesc, TCSANOW, &tty) != 0) {
+            std::cerr << "error from tcsetattr" << std::endl;
+            return false;
+        }
+
+        return true;
     }
 
-    return true;
-}
+    char SerialCommunication::readChar() {
+        char data;
+        read(socketDesc, &data, 1);
+        return data;
+    }
+
+    void SerialCommunication::writeChar(char data) {
+        write(socketDesc, &data, 1);
+    }
 
 }

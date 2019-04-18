@@ -1,98 +1,52 @@
 #include "message.h"
-
-#include <algorithm>
 #include <string.h>
 
 #include "config.h"
 
-namespace ccm
-{
+namespace ccm {
 
-static const uint8_t HEADER_LENGTH_POS = 2;
-static const uint8_t HEADER_SOURCE_POS = 1;
-static const uint8_t HEADER_TYPE_POS = 0;
+    Message::Message() : data(MESSAGE_MAX_SIZE) {
 
-Message::Message()  :
-    mData( new char[MESSAGE_MAX_SIZE] )
-{
-}
+    }
 
-Message::~Message()
-{
-    delete[] mData;
-}
+    uint8_t Message::type() const {
+        return data[HEADER_MESSAGE_TYPE_POS];
+    }
 
-Message &Message::operator= ( const Message &other )
-{
-    memcpy( mData, other.mData, other.getMessageSize() );
-}
+    void Message::setType(uint8_t type) {
+        data[HEADER_MESSAGE_TYPE_POS] = type;
+    }
 
-char *Message::getData()
-{
-    return mData;
-}
+    uint8_t Message::payloadSize() const {
+        return data[HEADER_MESSAGE_PAYLOAD_SIZE_POS];
+    }
 
-const char *Message::getData() const
-{
-    return mData;
-}
+    void Message::setPayloadSize(uint8_t size) {
+        data[HEADER_MESSAGE_PAYLOAD_SIZE_POS] = size;
+    }
 
-char *Message::getPayload()
-{
-    return &mData[MESSAGE_HEADER_SIZE];
-}
+    const char *Message::payload() const {
+        return &data[HEADER_SIZE];
+    }
 
-const char *Message::getPayload() const
-{
-    return &mData[MESSAGE_HEADER_SIZE];
-}
+    uint8_t Message::headerSize() const {
+        return HEADER_SIZE;
+    }
 
-void Message::setPayloadSize( uint16_t size )
-{
-    size = size < getMaxPayloadSize() ? size : getMaxPayloadSize();
+    uint8_t Message::messageSize() const {
+        return payloadSize() + HEADER_SIZE;
+    }
 
-    mData[HEADER_LENGTH_POS] = size & 0xff;
-    mData[HEADER_LENGTH_POS + 1] = ( size >> 8 );
-}
+    uint8_t Message::maxMessageSize() const {
+        return data.size();
+    }
 
-uint16_t Message::getPayloadSize()  const
-{
-    return ( mData[HEADER_LENGTH_POS + 1] << 8 ) + mData[HEADER_LENGTH_POS];
-}
+    const std::vector<char> &Message::message() const {
+        return data;
+    }
 
-uint16_t Message::getMaxPayloadSize()
-{
-    return MESSAGE_MAX_SIZE - MESSAGE_HEADER_SIZE;
-}
-
-uint16_t Message::getMaxMessageSize()
-{
-    return MESSAGE_MAX_SIZE;
-}
-
-uint16_t Message::getMessageSize() const
-{
-    return getPayloadSize() + MESSAGE_HEADER_SIZE;
-}
-
-void Message::setSourceId( uint8_t source )
-{
-    mData[HEADER_SOURCE_POS] = source;
-}
-
-uint8_t Message::getSourceId() const
-{
-    return mData[HEADER_SOURCE_POS];
-}
-
-void Message::setType( uint8_t type )
-{
-    mData[HEADER_TYPE_POS] = type;
-}
-
-uint8_t Message::getType() const
-{
-    return mData[HEADER_TYPE_POS];
-}
+    std::vector<char> &Message::message() {
+        return data;
+    }
 
 }

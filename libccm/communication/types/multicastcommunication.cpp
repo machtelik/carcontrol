@@ -49,12 +49,6 @@ namespace ccm {
             return false;
         }
 
-        sockaddr_in6 bindAddress = { AF_INET6, htons(port), 0, in6addr_any, 0 };
-        if (bind(socketDesc, (struct sockaddr *) &bindAddress, sizeof(bindAddress)) < 0) {
-            std::cerr << "Could not bind socket" << std::endl;
-            return false;
-        }
-
         int loop = 1;
         if (setsockopt(socketDesc, IPPROTO_IPV6, IPV6_MULTICAST_LOOP, &loop, sizeof(loop)) < 0) {
             std::cerr << "Error while setting IPV6_MULTICAST_LOOP" << std::endl;
@@ -66,6 +60,13 @@ namespace ccm {
             std::cerr << "Could not join group" << std::endl;
             return false;
         }
+
+        sockaddr_in6 bindAddress = { AF_INET6, htons(port), 0, in6addr_any, 0 };
+        if (bind(socketDesc, (struct sockaddr *) &bindAddress, sizeof(bindAddress)) < 0) {
+            std::cerr << "Could not bind socket" << std::endl;
+            return false;
+        }
+
 
         return true;
     }

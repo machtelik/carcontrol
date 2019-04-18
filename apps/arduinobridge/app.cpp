@@ -22,7 +22,13 @@ void App::loop() {
 }
 
 bool App::onMessageReceived(ccm::Message *message) {
-
+    switch (message->type()) {
+        case 0 :
+            serialCommunication->send(message);
+            return true;
+        default:
+            break;
+    }
 
     return false;
 }

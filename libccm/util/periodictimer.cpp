@@ -1,3 +1,5 @@
+#include <utility>
+
 #include "periodictimer.h"
 
 #include <sys/timerfd.h>
@@ -5,72 +7,67 @@
 #include <unistd.h>
 #include <iostream>
 
-namespace ccm
-{
+namespace ccm {
 
-PeriodicTimer::PeriodicTimer( uint32_t period, std::function<void()> func ) :
-    mFunc( func ),
-    mRunning( true ),
-    mPeriod( period * 1000 )
-{
-    mThread = new std::thread( &PeriodicTimer::run, this );
-}
-
-
-PeriodicTimer::~PeriodicTimer()
-{
-    mRunning = false;
-    mThread->join();
-}
-
-
-void PeriodicTimer::run()
-{
-    mRunning = true;
-    if( makePeriodic() < 0 ) {
-        return;
+    PeriodicTimer::~PeriodicTimer() {
+        stop();
     }
 
-    while( mRunning ) {
-        mFunc();
-        waitPeriod();
+    bool PeriodicTimer::start(uint32_t period, std::function<void()> func) {
+        if (isRunning) {
+            return false;
+        }
+
+        timerPeriod = period * 1000;
+        periodicFunction = std::move(func);
+        timerThread = std::make_unique<std::thread>(new std::thread(&PeriodicTimer::run, this));
+
+        isRunning = true;
+
+        return true;
     }
 
-    close( mTimerDesc );
-}
-
-int PeriodicTimer::makePeriodic()
-{
-    struct itimerspec itval;
-
-    mTimerDesc = timerfd_create( CLOCK_MONOTONIC, 0 );
-    mMissedWakeups = 0;
-    if( mTimerDesc == -1 ) {
-        return -1;
+    void PeriodicTimer::stop() {
+        isRunning = false;
+        timerThread->join();
+        timerThread = nullptr;
+        periodicFunction = nullptr;
     }
 
-    uint32_t sec = mPeriod / 1000000;
-    uint32_t ns = ( mPeriod - ( sec * 1000000 ) ) * 1000;
-    itval.it_interval.tv_sec = sec;
-    itval.it_interval.tv_nsec = ns;
-    itval.it_value.tv_sec = sec;
-    itval.it_value.tv_nsec = ns;
-    return timerfd_settime( mTimerDesc, 0, &itval, NULL );
-}
+    void PeriodicTimer::run() {
+        isRunning = true;
+        if (makePeriodic() < 0) {
+            return;
+        }
 
-void PeriodicTimer::waitPeriod()
-{
-    uint64_t missed;
+        while (isRunning) {
+            periodicFunction();
+            waitPeriod();
+        }
 
-    int ret = read( mTimerDesc, &missed, sizeof( missed ) );
-    if( ret == -1 ) {
-        std::cerr << "read timer" << std::endl;
-        return;
+        close(timerDescriptor);
     }
 
-    if( missed > 0 ) {
-        mMissedWakeups += ( missed - 1 );
+    int PeriodicTimer::makePeriodic() {
+        timerDescriptor = timerfd_create(CLOCK_MONOTONIC, 0);
+        if (timerDescriptor == -1) {
+            return -1;
+        }
+
+        uint32_t sec = timerPeriod / 1000000;
+        uint32_t ns = (timerPeriod - (sec * 1000000)) * 1000;
+        itimerspec timerSpec = {{sec, ns},
+                                {sec, ns}};
+        return timerfd_settime(timerDescriptor, 0, &timerSpec, nullptr);
     }
-}
+
+    void PeriodicTimer::waitPeriod() {
+        uint64_t missed;
+
+        if (read(timerDescriptor, &missed, sizeof(missed)) == -1) {
+            std::cerr << "read timer" << std::endl;
+            return;
+        }
+    }
 
 }

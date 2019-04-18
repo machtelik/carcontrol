@@ -1,40 +1,41 @@
-#ifndef __PERIODICTIMER_H__
-#define __PERIODICTIMER_H__
+#ifndef __CCM_PERIODICTIMER_H__
+#define __CCM_PERIODICTIMER_H__
 
 #include <thread>
 #include <stdint.h>
+#include <functional>
+#include <memory>
 
-namespace ccm
-{
+namespace ccm {
 
-class PeriodicTimer
-{
+    class PeriodicTimer {
 
-public:
-    PeriodicTimer( uint32_t period, std::function< void() > func );
-    virtual ~PeriodicTimer();
+    public:
+        explicit PeriodicTimer() = default;
+        virtual ~PeriodicTimer();
 
-protected:
+        bool start(uint32_t period, std::function<void()> func);
+        void stop();
 
-    int makePeriodic();
-    void waitPeriod();
+    protected:
 
-    void run();
+        int makePeriodic();
+        void waitPeriod();
 
-private:
-    std::function<void()> mFunc;
+        void run();
 
-    volatile bool mRunning;
-    uint32_t mPeriod;
+    private:
+        std::function<void()> periodicFunction;
 
-    int mTimerDesc;
-    uint64_t mMissedWakeups;
+        volatile bool isRunning = false;
+        uint32_t timerPeriod = 1;
 
-    std::thread *mThread;
+        int timerDescriptor = -1;
 
-};
+        std::unique_ptr<std::thread> timerThread;
+    };
 
 } // ccm
 
-#endif /* __PERIODICTIMER_H__ */
+#endif /* __CCM_PERIODICTIMER_H__ */
 

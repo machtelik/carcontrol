@@ -93,6 +93,8 @@ namespace ccm {
         }
 
         ttySocket = -1;
+
+        return true;
     }
 
     bool SerialCommunication::sendMessage(const Message *message) {

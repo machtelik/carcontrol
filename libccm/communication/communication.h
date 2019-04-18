@@ -6,11 +6,11 @@
 #include <memory>
 #include <thread>
 
+#include "../eventloop/eventloop.h"
+
 namespace ccm {
 
     class Message;
-
-    class EventLoop;
 
     class Communication {
 
@@ -38,8 +38,8 @@ namespace ccm {
         volatile bool connected = false;
 
         std::unique_ptr<EventLoop> eventLoop;
-        std::unique_ptr<std::thread> eventThread;
-        std::unique_ptr<std::thread> receiveThread;
+        std::thread eventThread;
+        std::thread receiveThread;
 
         std::function<void(Message *)> messageCallback;
 

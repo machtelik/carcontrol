@@ -1,16 +1,14 @@
 #include <utility>
-
-#include "communication.h"
 #include <iostream>
 
+#include "communication.h"
 #include "eventloop/eventloop.h"
 #include "message/message.h"
 
 namespace ccm {
 
     Communication::Communication() :
-            eventLoop(std::make_unique<EventLoop>(new EventLoop())) {
-
+            eventLoop(std::make_unique<EventLoop>()) {
     }
 
     bool Communication::start(std::function<void(Message *)> callback) {
@@ -25,8 +23,8 @@ namespace ccm {
 
         messageCallback = std::move(callback);
 
-        eventThread = std::make_unique<std::thread>(new std::thread(&EventLoop::execute, eventLoop));
-        receiveThread = std::make_unique<std::thread>(new std::thread(&Communication::receiveMessages));
+        eventThread = std::thread(&EventLoop::execute, eventLoop.get());
+        receiveThread = std::thread(&Communication::receiveMessages, this);
 
         connected = true;
 
@@ -41,11 +39,11 @@ namespace ccm {
         connected = false;
         eventLoop->exit();
 
-        eventThread->join();
-        receiveThread->join();
+        eventThread.join();
+        receiveThread.join();
 
-        eventThread = nullptr;
-        receiveThread = nullptr;
+        eventThread.detach();
+        receiveThread.detach();
     }
 
     bool Communication::isConnected() {
@@ -55,7 +53,6 @@ namespace ccm {
     void Communication::send(Message *message) {
         eventLoop->post([this, message] {
             sendMessage(message);
-
             delete message;
         });
     }

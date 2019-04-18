@@ -1,63 +1,47 @@
-#ifndef __COMPONENT_H__
-#define __COMPONENT_H__
+#ifndef __CCM_COMPONENT_H__
+#define __CCM_COMPONENT_H__
 
-#include <mutex>
-#include <condition_variable>
+#include <memory>
 
 #include "eventloop/eventloop.h"
 
-namespace ccm
-{
+namespace ccm {
 
-class Message;
-class Communication;
-class Messageable;
-class CommunicationHandler;
-class PeriodicTimer;
+    class Message;
 
-class Component : public EventLoop
-{
+    class Communication;
 
-public:
-    Component( int8_t id , int argc, char **argv );
-    virtual ~Component();
+    class PeriodicTimer;
 
-    int execute();
-    void exit();
+    class Component : public EventLoop {
 
-    uint8_t getId();
+    public:
+        Component(int argc, char **argv);
 
-protected:
+        ~Component() override;
 
-    virtual bool begin() = 0;
-    virtual bool loop();
+        int execute() override;
+        void exit() override;
 
-    void setLoopEnabled( bool enabled );
+        void sendMessage(Message *message);
 
-    virtual bool messageReceived( uint8_t communicationType, const Message *message ) = 0;
-    bool sendMessage( Message *message );
-    CommunicationHandler *communication();
+    protected:
 
+        virtual bool begin() = 0;
+        virtual void loop() = 0;
 
-private:
-    volatile bool mRunning;
+        virtual bool onMessageReceived(const Message *message) = 0;
 
-    PeriodicTimer *mLoopTimer;
-    bool mLoopEnabled;
-    uint32_t mLoopInterval;
+    private:
 
-    int8_t mId;
+        std::unique_ptr<PeriodicTimer> periodicTimer;
+        std::unique_ptr<Communication> communication;
 
-    CommunicationHandler *mCommunicationHandler;
+        uint32_t loopInterval;
 
-    void handleLoopEvent();
-    void handleMessageEvent( uint8_t communicationType, Message *message );
-    void postMessage( uint8_t communicationType, Message *message );
-
-
-};
+    };
 
 } // ccm
 
-#endif /* __COMPONENT_H__ */
+#endif /* __CCM_COMPONENT_H__ */
 

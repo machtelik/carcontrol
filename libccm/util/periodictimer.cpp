@@ -20,7 +20,7 @@ namespace ccm {
 
         timerPeriod = period * 1000;
         periodicFunction = std::move(func);
-        timerThread = std::make_unique<std::thread>(new std::thread(&PeriodicTimer::run, this));
+        timerThread = std::thread(&PeriodicTimer::run, this);
 
         isRunning = true;
 
@@ -29,8 +29,8 @@ namespace ccm {
 
     void PeriodicTimer::stop() {
         isRunning = false;
-        timerThread->join();
-        timerThread = nullptr;
+        timerThread.join();
+        timerThread.detach();
         periodicFunction = nullptr;
     }
 

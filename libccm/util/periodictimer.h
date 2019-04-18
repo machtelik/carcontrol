@@ -32,7 +32,7 @@ namespace ccm {
 
         int timerDescriptor = -1;
 
-        std::unique_ptr<std::thread> timerThread;
+        std::thread timerThread;
     };
 
 } // ccm

@@ -5,15 +5,15 @@
 namespace ccm {
 
     int EventLoop::execute() {
-        if (isRunning) {
+        if (isExecuting) {
             return EXIT_FAILURE;
         }
 
-        isRunning = true;
+        isExecuting = true;
 
         std::function<void()> event;
 
-        while (isRunning) {
+        while (isExecuting) {
             {
                 std::unique_lock<std::mutex> lock(eventMutex);
                 eventBarrier.wait(lock, [&]() {
@@ -28,10 +28,11 @@ namespace ccm {
         }
 
         return EXIT_SUCCESS;
+
     }
 
     void EventLoop::exit() {
-        isRunning = false;
+        isExecuting = false;
         eventBarrier.notify_one();
     }
 
@@ -39,6 +40,10 @@ namespace ccm {
         std::lock_guard<std::mutex> lock(eventMutex);
         eventQueue.push(event);
         eventBarrier.notify_one();
+    }
+
+    bool EventLoop::isRunning() {
+        return isExecuting;
     }
 
 }

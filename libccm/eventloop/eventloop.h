@@ -1,5 +1,5 @@
-#ifndef __CCM_EVENTLOOP_H__
-#define __CCM_EVENTLOOP_H__
+#ifndef __EVENTLOOP_H__
+#define __EVENTLOOP_H__
 
 #include <stdint.h>
 #include <queue>
@@ -16,14 +16,16 @@ namespace ccm {
         explicit EventLoop() = default;
         virtual ~EventLoop() = default;
 
-        int execute();
-        void exit();
+        virtual int execute();
+        virtual void exit();
 
-        void post(std::function<void()> event);
+        virtual void post(std::function<void()> event);
+
+        bool isRunning();
 
     private:
 
-        volatile bool isRunning = false;
+        volatile bool isExecuting = false;
 
         std::condition_variable eventBarrier;
         std::mutex eventMutex;
@@ -34,5 +36,5 @@ namespace ccm {
 
 } // ccm
 
-#endif /* __CCM_EVENTLOOP_H__ */
+#endif /* __EVENTLOOP_H__ */
 
